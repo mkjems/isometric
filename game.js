@@ -36,6 +36,32 @@ const PROJECTILE_SPEED = 0.5;
 const JUMP_STRENGTH = 20;
 const GRAVITY = 0.7;
 
+// Audio context for sound effects
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+// Function to play "wheeeeeeee" sound
+function playJumpSound() {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Start high and sweep down for "wheeeee" effect
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.5);
+    
+    // Volume envelope - fade in and out
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.4);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.6);
+    
+    oscillator.type = 'sine';
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.6);
+}
+
 // Initialize grid
 function initGrid() {
     for (let row = 0; row < GRID_ROWS; row++) {
@@ -365,6 +391,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'x' || e.key === 'X') {
         if (playerJumpHeight === 0 && playerJumpVelocity === 0) {
             playerJumpVelocity = JUMP_STRENGTH;
+            playJumpSound();
         }
         e.preventDefault();
     }
