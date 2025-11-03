@@ -20,6 +20,16 @@ let selectedTile = null;
 let hoveredTile = null;
 let projectiles = [];
 
+// Player position (using fractional coordinates for smooth movement)
+let playerRow = 10;
+let playerCol = 10;
+let playerVelRow = 0;
+let playerVelCol = 0;
+
+// Game settings
+const PLAYER_SPEED = 0.15;
+const PLAYER_FRICTION = 0.85;
+
 // Initialize grid
 function initGrid() {
     for (let row = 0; row < GRID_ROWS; row++) {
@@ -143,13 +153,9 @@ function drawGrid() {
     for (let row = 0; row < GRID_ROWS; row++) {
         for (let col = 0; col < GRID_COLS; col++) {
             const tile = grid[row][col];
-            const isSelected = selectedTile && 
-                              selectedTile.row === row && 
-                              selectedTile.col === col;
             const isHovered = hoveredTile &&
                              hoveredTile.row === row &&
-                             hoveredTile.col === col &&
-                             !isSelected;
+                             hoveredTile.col === col;
             // Draw tiles without the green box first
             drawTile(row, col, tile.color, false, isHovered);
         }
@@ -160,11 +166,9 @@ function drawGrid() {
         drawProjectile(proj.row, proj.col);
     });
     
-    // Draw selected tile (green box) last so it's always on top
-    if (selectedTile) {
-        const tile = grid[selectedTile.row][selectedTile.col];
-        drawTile(selectedTile.row, selectedTile.col, tile.color, true, false);
-    }
+    // Draw player (green box) at fractional position
+    const tile = grid[Math.floor(playerRow)][Math.floor(playerCol)];
+    drawTile(playerRow, playerCol, tile.color, true, false);
 }
 
 // Draw a projectile
@@ -203,8 +207,11 @@ canvas.addEventListener('click', (e) => {
     
     // Check if clicked tile is within grid bounds
     if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
-        selectedTile = { row, col };
-        drawGrid();
+        // Move player to clicked position instantly
+        playerRow = row;
+        playerCol = col;
+        playerVelRow = 0;
+        playerVelCol = 0;
     }
 });
 
@@ -236,44 +243,26 @@ canvas.addEventListener('mousemove', (e) => {
     }
 });
 
-// Handle arrow key navigation
+// Keyboard input tracking
+const keys = {};
+
 document.addEventListener('keydown', (e) => {
-    if (!selectedTile) return;
+    keys[e.key] = true;
     
-    let newRow = selectedTile.row;
-    let newCol = selectedTile.col;
-    
-    switch(e.key) {
-        case 'ArrowUp':
-            newRow--;
-            e.preventDefault();
-            break;
-        case 'ArrowDown':
-            newRow++;
-            e.preventDefault();
-            break;
-        case 'ArrowLeft':
-            newCol--;
-            e.preventDefault();
-            break;
-        case 'ArrowRight':
-            newCol++;
-            e.preventDefault();
-            break;
-        case ' ':
-            // Shoot projectile in northeast direction (row decreases, col increases)
-            shootProjectile(selectedTile.row, selectedTile.col);
-            e.preventDefault();
-            return;
-        default:
-            return;
+    // Shoot projectile with spacebar
+    if (e.key === ' ') {
+        shootProjectile(Math.floor(playerRow), Math.floor(playerCol));
+        e.preventDefault();
     }
     
-    // Check if new position is within grid bounds
-    if (newRow >= 0 && newRow < GRID_ROWS && newCol >= 0 && newCol < GRID_COLS) {
-        selectedTile = { row: newRow, col: newCol };
-        drawGrid();
+    // Prevent arrow key scrolling
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
     }
+});
+
+document.addEventListener('keyup', (e) => {
+    keys[e.key] = false;
 });
 
 // Shoot a projectile in northeast direction
@@ -285,7 +274,6 @@ function shootProjectile(startRow, startCol) {
         // Check if projectile is still on the board
         if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
             projectiles = [{ row, col }]; // Only show current projectile position
-            drawGrid();
             
             // Move to next position along the grid line
             row--;
@@ -294,13 +282,78 @@ function shootProjectile(startRow, startCol) {
         } else {
             // Projectile went off board
             projectiles = [];
-            drawGrid();
         }
     };
     
     animateProjectile();
 }
 
-// Initialize and render
+// Update game state
+function update() {
+    // Handle input and apply velocity
+    let inputApplied = false;
+    if (keys['ArrowUp']) {
+        playerVelRow -= PLAYER_SPEED;
+        inputApplied = true;
+    }
+    if (keys['ArrowDown']) {
+        playerVelRow += PLAYER_SPEED;
+        inputApplied = true;
+    }
+    if (keys['ArrowLeft']) {
+        playerVelCol -= PLAYER_SPEED;
+        inputApplied = true;
+    }
+    if (keys['ArrowRight']) {
+        playerVelCol += PLAYER_SPEED;
+        inputApplied = true;
+    }
+    
+    // Apply friction
+    playerVelRow *= PLAYER_FRICTION;
+    playerVelCol *= PLAYER_FRICTION;
+    
+    // Update position
+    playerRow += playerVelRow;
+    playerCol += playerVelCol;
+    
+    // Clamp to grid boundaries
+    playerRow = Math.max(0, Math.min(GRID_ROWS - 1, playerRow));
+    playerCol = Math.max(0, Math.min(GRID_COLS - 1, playerCol));
+    
+    // Snap to grid when stopped and no input
+    const velocityThreshold = 0.01;
+    if (!inputApplied && Math.abs(playerVelRow) < velocityThreshold && Math.abs(playerVelCol) < velocityThreshold) {
+        // Snap to nearest grid position
+        const targetRow = Math.round(playerRow);
+        const targetCol = Math.round(playerCol);
+        
+        // Smoothly interpolate to grid position
+        const snapSpeed = 0.2;
+        playerRow += (targetRow - playerRow) * snapSpeed;
+        playerCol += (targetCol - playerCol) * snapSpeed;
+        
+        // If very close, snap exactly
+        if (Math.abs(playerRow - targetRow) < 0.01 && Math.abs(playerCol - targetCol) < 0.01) {
+            playerRow = targetRow;
+            playerCol = targetCol;
+            playerVelRow = 0;
+            playerVelCol = 0;
+        }
+    } else {
+        // Stop velocity if very small during movement
+        if (Math.abs(playerVelRow) < 0.001) playerVelRow = 0;
+        if (Math.abs(playerVelCol) < 0.001) playerVelCol = 0;
+    }
+}
+
+// Game loop
+function gameLoop() {
+    update();
+    drawGrid();
+    requestAnimationFrame(gameLoop);
+}
+
+// Initialize and start game loop
 initGrid();
-drawGrid();
+gameLoop();
