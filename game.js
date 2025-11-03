@@ -26,11 +26,15 @@ let playerCol = 10;
 let playerVelRow = 0;
 let playerVelCol = 0;
 let movementAxis = null; // 'row' or 'col' or null when stopped
+let playerJumpHeight = 0; // Current jump height
+let playerJumpVelocity = 0; // Vertical jump velocity
 
 // Game settings
 const PLAYER_SPEED = 0.15;
 const PLAYER_FRICTION = 0.85;
 const PROJECTILE_SPEED = 0.5;
+const JUMP_STRENGTH = 20;
+const GRAVITY = 0.7;
 
 // Initialize grid
 function initGrid() {
@@ -168,9 +172,109 @@ function drawGrid() {
         drawProjectile(proj.row, proj.col);
     });
     
-    // Draw player (green box) at fractional position
+    // Draw shadow if player is jumping
+    if (playerJumpHeight > 0) {
+        drawShadow(playerRow, playerCol);
+    }
+    
+    // Draw player (green box) at fractional position with jump offset
     const tile = grid[Math.floor(playerRow)][Math.floor(playerCol)];
-    drawTile(playerRow, playerCol, tile.color, true, false);
+    drawTileWithJump(playerRow, playerCol, tile.color, true, false, playerJumpHeight);
+}
+
+// Draw a shadow under the player when jumping
+function drawShadow(row, col) {
+    const { x, y } = gridToScreen(row, col);
+    
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.beginPath();
+    
+    // Draw shadow as a full tile-sized diamond
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT / 2);
+    ctx.lineTo(x, y + TILE_HEIGHT);
+    ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2);
+    ctx.closePath();
+    
+    ctx.fillStyle = '#000000';
+    ctx.fill();
+    ctx.restore();
+}
+
+// Draw tile with jump offset
+function drawTileWithJump(row, col, color, highlight = false, hover = false, jumpHeight = 0) {
+    const { x, y } = gridToScreen(row, col);
+    const yOffset = -jumpHeight; // Negative to go up
+    
+    ctx.save();
+    ctx.beginPath();
+    
+    // Draw diamond shape (base tile) with offset
+    ctx.moveTo(x, y + yOffset);
+    ctx.lineTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT / 2 + yOffset);
+    ctx.lineTo(x, y + TILE_HEIGHT + yOffset);
+    ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 + yOffset);
+    ctx.closePath();
+    
+    // Fill tile
+    if (hover && !highlight) {
+        ctx.fillStyle = '#90d5ff';
+    } else {
+        ctx.fillStyle = color;
+    }
+    ctx.fill();
+    
+    // Draw outline
+    ctx.strokeStyle = hover && !highlight ? '#5599ff' : '#2a2a2a';
+    ctx.lineWidth = hover && !highlight ? 2 : 1;
+    ctx.stroke();
+
+    // Draw 3D green box if highlighted
+    if (highlight) {
+        const boxHeight = 40;
+        
+        // Left face (vertical)
+        ctx.beginPath();
+        ctx.moveTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 + yOffset);
+        ctx.lineTo(x, y + TILE_HEIGHT + yOffset);
+        ctx.lineTo(x, y + TILE_HEIGHT - boxHeight + yOffset);
+        ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
+        ctx.closePath();
+        ctx.fillStyle = '#44cc44';
+        ctx.fill();
+        ctx.strokeStyle = '#228822';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Right face (vertical)
+        ctx.beginPath();
+        ctx.moveTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT / 2 + yOffset);
+        ctx.lineTo(x, y + TILE_HEIGHT + yOffset);
+        ctx.lineTo(x, y + TILE_HEIGHT - boxHeight + yOffset);
+        ctx.lineTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
+        ctx.closePath();
+        ctx.fillStyle = '#55dd55';
+        ctx.fill();
+        ctx.strokeStyle = '#228822';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Top face (diamond)
+        ctx.beginPath();
+        ctx.moveTo(x, y - boxHeight + yOffset);
+        ctx.lineTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
+        ctx.lineTo(x, y + TILE_HEIGHT - boxHeight + yOffset);
+        ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
+        ctx.closePath();
+        ctx.fillStyle = '#66ff66';
+        ctx.fill();
+        ctx.strokeStyle = '#228822';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    ctx.restore();
 }
 
 // Draw a projectile
@@ -257,6 +361,14 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
     }
     
+    // Jump with x key
+    if (e.key === 'x' || e.key === 'X') {
+        if (playerJumpHeight === 0 && playerJumpVelocity === 0) {
+            playerJumpVelocity = JUMP_STRENGTH;
+        }
+        e.preventDefault();
+    }
+    
     // Prevent arrow key scrolling
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
@@ -280,43 +392,52 @@ function shootProjectile(startRow, startCol) {
 
 // Update game state
 function update() {
-    const velocityThreshold = 0.3;
-    const isMoving = Math.abs(playerVelRow) >= velocityThreshold || Math.abs(playerVelCol) >= velocityThreshold;
+    const velocityThreshold = 0.005;
     
-    // Determine if player is stopped
+    // Determine current movement state
+    const hasRowVelocity = Math.abs(playerVelRow) >= velocityThreshold;
+    const hasColVelocity = Math.abs(playerVelCol) >= velocityThreshold;
+    const isMoving = hasRowVelocity || hasColVelocity;
+    
+    // Update movement axis based on current velocity
     if (!isMoving) {
         movementAxis = null;
+    } else if (hasRowVelocity) {
+        movementAxis = 'row';
+    } else if (hasColVelocity) {
+        movementAxis = 'col';
     }
     
-    // Handle input and apply velocity
-    let inputApplied = false;
-    let newAxisRequested = null;
-    
     // Check what direction is being requested
+    let newAxisRequested = null;
     if (keys['ArrowUp'] || keys['ArrowDown']) {
         newAxisRequested = 'row';
     } else if (keys['ArrowLeft'] || keys['ArrowRight']) {
         newAxisRequested = 'col';
     }
     
-    // If changing axis while moving, snap to grid and transfer energy
-    if (newAxisRequested && movementAxis && newAxisRequested !== movementAxis) {
+    // Check if player is on the ground
+    const isOnGround = playerJumpHeight === 0;
+    
+    // Handle direction change (even when coasting with kinetic energy)
+    // Only allow direction change when on the ground
+    if (newAxisRequested && movementAxis && newAxisRequested !== movementAxis && isOnGround) {
         // Calculate total kinetic energy (speed)
         const currentSpeed = Math.sqrt(playerVelRow * playerVelRow + playerVelCol * playerVelCol);
         
-        // Snap position to grid on the current axis
+        // Snap position to grid on the OLD axis (the one we're leaving)
         if (movementAxis === 'row') {
             playerRow = Math.round(playerRow);
+            playerVelRow = 0;
         } else {
             playerCol = Math.round(playerCol);
+            playerVelCol = 0;
         }
         
-        // Transfer all energy to new direction
-        playerVelRow = 0;
-        playerVelCol = 0;
+        // Switch to new axis
         movementAxis = newAxisRequested;
         
-        // Apply the speed to the new axis
+        // Apply the speed to the new axis based on requested direction
         if (newAxisRequested === 'row') {
             if (keys['ArrowUp']) {
                 playerVelRow = -currentSpeed;
@@ -330,43 +451,58 @@ function update() {
                 playerVelCol = currentSpeed;
             }
         }
-        inputApplied = true;
-    } else {
-        // Normal movement on current or new axis
-        if (keys['ArrowUp'] || keys['ArrowDown']) {
-            if (movementAxis === null || movementAxis === 'row') {
-                if (keys['ArrowUp']) {
-                    playerVelRow -= PLAYER_SPEED;
-                    inputApplied = true;
-                    movementAxis = 'row';
-                }
-                if (keys['ArrowDown']) {
-                    playerVelRow += PLAYER_SPEED;
-                    inputApplied = true;
-                    movementAxis = 'row';
-                }
+    }
+    
+    // Apply input acceleration (only on current axis or when stopped)
+    // Only allow acceleration/braking when on the ground
+    if (isOnGround) {
+        if (movementAxis === null || movementAxis === 'row') {
+            if (keys['ArrowUp']) {
+                playerVelRow -= PLAYER_SPEED;
+                movementAxis = 'row';
+                // Ensure no column velocity
+                playerVelCol = 0;
+            } else if (keys['ArrowDown']) {
+                playerVelRow += PLAYER_SPEED;
+                movementAxis = 'row';
+                // Ensure no column velocity
+                playerVelCol = 0;
             }
         }
         
-        if (keys['ArrowLeft'] || keys['ArrowRight']) {
-            if (movementAxis === null || movementAxis === 'col') {
-                if (keys['ArrowLeft']) {
-                    playerVelCol -= PLAYER_SPEED;
-                    inputApplied = true;
-                    movementAxis = 'col';
-                }
-                if (keys['ArrowRight']) {
-                    playerVelCol += PLAYER_SPEED;
-                    inputApplied = true;
-                    movementAxis = 'col';
-                }
+        if (movementAxis === null || movementAxis === 'col') {
+            if (keys['ArrowLeft']) {
+                playerVelCol -= PLAYER_SPEED;
+                movementAxis = 'col';
+                // Ensure no row velocity
+                playerVelRow = 0;
+            } else if (keys['ArrowRight']) {
+                playerVelCol += PLAYER_SPEED;
+                movementAxis = 'col';
+                // Ensure no row velocity
+                playerVelRow = 0;
             }
         }
     }
     
-    // Apply friction
-    playerVelRow *= PLAYER_FRICTION;
-    playerVelCol *= PLAYER_FRICTION;
+    // Apply friction only to the active axis and only when on the ground
+    if (isOnGround) {
+        if (movementAxis === 'row') {
+            playerVelRow *= PLAYER_FRICTION;
+            playerVelCol = 0; // Ensure other axis is zero
+        } else if (movementAxis === 'col') {
+            playerVelCol *= PLAYER_FRICTION;
+            playerVelRow = 0; // Ensure other axis is zero
+        }
+    } else {
+        // In the air - no friction, maintain momentum
+        // Just ensure one axis is zero
+        if (movementAxis === 'row') {
+            playerVelCol = 0;
+        } else if (movementAxis === 'col') {
+            playerVelRow = 0;
+        }
+    }
     
     // Update position
     playerRow += playerVelRow;
@@ -376,9 +512,12 @@ function update() {
     playerRow = Math.max(0, Math.min(GRID_ROWS - 1, playerRow));
     playerCol = Math.max(0, Math.min(GRID_COLS - 1, playerCol));
     
-    // Snap to grid when stopped and no input
-    if (!inputApplied && Math.abs(playerVelRow) < velocityThreshold && Math.abs(playerVelCol) < velocityThreshold) {
-        // Snap to nearest grid position
+    // Stop velocity if very small
+    if (Math.abs(playerVelRow) < velocityThreshold) playerVelRow = 0;
+    if (Math.abs(playerVelCol) < velocityThreshold) playerVelCol = 0;
+    
+    // Snap to grid when completely stopped
+    if (playerVelRow === 0 && playerVelCol === 0) {
         const targetRow = Math.round(playerRow);
         const targetCol = Math.round(playerCol);
         
@@ -391,13 +530,19 @@ function update() {
         if (Math.abs(playerRow - targetRow) < 0.01 && Math.abs(playerCol - targetCol) < 0.01) {
             playerRow = targetRow;
             playerCol = targetCol;
-            playerVelRow = 0;
-            playerVelCol = 0;
         }
-    } else {
-        // Stop velocity if very small during movement
-        if (Math.abs(playerVelRow) < 0.002) playerVelRow = 0;
-        if (Math.abs(playerVelCol) < 0.002) playerVelCol = 0;
+    }
+    
+    // Update jump physics
+    if (playerJumpHeight > 0 || playerJumpVelocity !== 0) {
+        playerJumpVelocity -= GRAVITY;
+        playerJumpHeight += playerJumpVelocity;
+        
+        // Land on ground
+        if (playerJumpHeight <= 0) {
+            playerJumpHeight = 0;
+            playerJumpVelocity = 0;
+        }
     }
     
     // Update projectiles
