@@ -25,10 +25,12 @@ let playerRow = 10;
 let playerCol = 10;
 let playerVelRow = 0;
 let playerVelCol = 0;
+let movementAxis = null; // 'row' or 'col' or null when stopped
 
 // Game settings
 const PLAYER_SPEED = 0.15;
 const PLAYER_FRICTION = 0.85;
+const PROJECTILE_SPEED = 0.3;
 
 // Initialize grid
 function initGrid() {
@@ -267,46 +269,57 @@ document.addEventListener('keyup', (e) => {
 
 // Shoot a projectile in northeast direction
 function shootProjectile(startRow, startCol) {
-    let row = startRow - 1; // Move up (same as arrow up)
-    let col = startCol;
-    
-    const animateProjectile = () => {
-        // Check if projectile is still on the board
-        if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
-            projectiles = [{ row, col }]; // Only show current projectile position
-            
-            // Move to next position along the grid line
-            row--;
-            
-            setTimeout(animateProjectile, 100); // Move every 100ms
-        } else {
-            // Projectile went off board
-            projectiles = [];
-        }
-    };
-    
-    animateProjectile();
+    // Create a new projectile object with position and velocity
+    projectiles.push({
+        row: startRow,
+        col: startCol,
+        velRow: -PROJECTILE_SPEED, // Move up
+        velCol: 0
+    });
 }
 
 // Update game state
 function update() {
+    const velocityThreshold = 0.01;
+    const isMoving = Math.abs(playerVelRow) >= velocityThreshold || Math.abs(playerVelCol) >= velocityThreshold;
+    
+    // Determine if player is stopped
+    if (!isMoving) {
+        movementAxis = null;
+    }
+    
     // Handle input and apply velocity
     let inputApplied = false;
-    if (keys['ArrowUp']) {
-        playerVelRow -= PLAYER_SPEED;
-        inputApplied = true;
+    
+    // Only allow movement if stopped or continuing on same axis
+    if (keys['ArrowUp'] || keys['ArrowDown']) {
+        if (movementAxis === null || movementAxis === 'row') {
+            if (keys['ArrowUp']) {
+                playerVelRow -= PLAYER_SPEED;
+                inputApplied = true;
+                movementAxis = 'row';
+            }
+            if (keys['ArrowDown']) {
+                playerVelRow += PLAYER_SPEED;
+                inputApplied = true;
+                movementAxis = 'row';
+            }
+        }
     }
-    if (keys['ArrowDown']) {
-        playerVelRow += PLAYER_SPEED;
-        inputApplied = true;
-    }
-    if (keys['ArrowLeft']) {
-        playerVelCol -= PLAYER_SPEED;
-        inputApplied = true;
-    }
-    if (keys['ArrowRight']) {
-        playerVelCol += PLAYER_SPEED;
-        inputApplied = true;
+    
+    if (keys['ArrowLeft'] || keys['ArrowRight']) {
+        if (movementAxis === null || movementAxis === 'col') {
+            if (keys['ArrowLeft']) {
+                playerVelCol -= PLAYER_SPEED;
+                inputApplied = true;
+                movementAxis = 'col';
+            }
+            if (keys['ArrowRight']) {
+                playerVelCol += PLAYER_SPEED;
+                inputApplied = true;
+                movementAxis = 'col';
+            }
+        }
     }
     
     // Apply friction
@@ -322,7 +335,6 @@ function update() {
     playerCol = Math.max(0, Math.min(GRID_COLS - 1, playerCol));
     
     // Snap to grid when stopped and no input
-    const velocityThreshold = 0.01;
     if (!inputApplied && Math.abs(playerVelRow) < velocityThreshold && Math.abs(playerVelCol) < velocityThreshold) {
         // Snap to nearest grid position
         const targetRow = Math.round(playerRow);
@@ -345,6 +357,18 @@ function update() {
         if (Math.abs(playerVelRow) < 0.001) playerVelRow = 0;
         if (Math.abs(playerVelCol) < 0.001) playerVelCol = 0;
     }
+    
+    // Update projectiles
+    projectiles.forEach(proj => {
+        proj.row += proj.velRow;
+        proj.col += proj.velCol;
+    });
+    
+    // Remove projectiles that are off the board
+    projectiles = projectiles.filter(proj => 
+        proj.row >= 0 && proj.row < GRID_ROWS && 
+        proj.col >= 0 && proj.col < GRID_COLS
+    );
 }
 
 // Game loop
