@@ -62,6 +62,36 @@ function playJumpSound() {
     oscillator.stop(audioContext.currentTime + 0.6);
 }
 
+// Function to play "phschhhhh" phaser sound
+function playPhaserSound() {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+    
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Sweeping phaser effect - start high and drop quickly
+    oscillator.frequency.setValueAtTime(1200, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.15);
+    
+    // Low-pass filter for "shhhh" effect
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(3000, audioContext.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(500, audioContext.currentTime + 0.15);
+    filter.Q.value = 1;
+    
+    // Quick attack and decay
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.25, audioContext.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+    
+    oscillator.type = 'sawtooth'; // Sawtooth for harsh phaser sound
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.15);
+}
+
 // Initialize grid
 function initGrid() {
     for (let row = 0; row < GRID_ROWS; row++) {
@@ -384,6 +414,7 @@ document.addEventListener('keydown', (e) => {
     // Shoot projectile with spacebar
     if (e.key === ' ') {
         shootProjectile(Math.floor(playerRow), Math.floor(playerCol));
+        playPhaserSound();
         e.preventDefault();
     }
     
