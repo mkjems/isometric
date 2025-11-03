@@ -30,7 +30,7 @@ let movementAxis = null; // 'row' or 'col' or null when stopped
 // Game settings
 const PLAYER_SPEED = 0.15;
 const PLAYER_FRICTION = 0.85;
-const PROJECTILE_SPEED = 0.3;
+const PROJECTILE_SPEED = 0.5;
 
 // Initialize grid
 function initGrid() {
@@ -280,7 +280,7 @@ function shootProjectile(startRow, startCol) {
 
 // Update game state
 function update() {
-    const velocityThreshold = 0.01;
+    const velocityThreshold = 0.3;
     const isMoving = Math.abs(playerVelRow) >= velocityThreshold || Math.abs(playerVelCol) >= velocityThreshold;
     
     // Determine if player is stopped
@@ -290,34 +290,76 @@ function update() {
     
     // Handle input and apply velocity
     let inputApplied = false;
+    let newAxisRequested = null;
     
-    // Only allow movement if stopped or continuing on same axis
+    // Check what direction is being requested
     if (keys['ArrowUp'] || keys['ArrowDown']) {
-        if (movementAxis === null || movementAxis === 'row') {
-            if (keys['ArrowUp']) {
-                playerVelRow -= PLAYER_SPEED;
-                inputApplied = true;
-                movementAxis = 'row';
-            }
-            if (keys['ArrowDown']) {
-                playerVelRow += PLAYER_SPEED;
-                inputApplied = true;
-                movementAxis = 'row';
-            }
-        }
+        newAxisRequested = 'row';
+    } else if (keys['ArrowLeft'] || keys['ArrowRight']) {
+        newAxisRequested = 'col';
     }
     
-    if (keys['ArrowLeft'] || keys['ArrowRight']) {
-        if (movementAxis === null || movementAxis === 'col') {
-            if (keys['ArrowLeft']) {
-                playerVelCol -= PLAYER_SPEED;
-                inputApplied = true;
-                movementAxis = 'col';
+    // If changing axis while moving, snap to grid and transfer energy
+    if (newAxisRequested && movementAxis && newAxisRequested !== movementAxis) {
+        // Calculate total kinetic energy (speed)
+        const currentSpeed = Math.sqrt(playerVelRow * playerVelRow + playerVelCol * playerVelCol);
+        
+        // Snap position to grid on the current axis
+        if (movementAxis === 'row') {
+            playerRow = Math.round(playerRow);
+        } else {
+            playerCol = Math.round(playerCol);
+        }
+        
+        // Transfer all energy to new direction
+        playerVelRow = 0;
+        playerVelCol = 0;
+        movementAxis = newAxisRequested;
+        
+        // Apply the speed to the new axis
+        if (newAxisRequested === 'row') {
+            if (keys['ArrowUp']) {
+                playerVelRow = -currentSpeed;
+            } else if (keys['ArrowDown']) {
+                playerVelRow = currentSpeed;
             }
-            if (keys['ArrowRight']) {
-                playerVelCol += PLAYER_SPEED;
-                inputApplied = true;
-                movementAxis = 'col';
+        } else {
+            if (keys['ArrowLeft']) {
+                playerVelCol = -currentSpeed;
+            } else if (keys['ArrowRight']) {
+                playerVelCol = currentSpeed;
+            }
+        }
+        inputApplied = true;
+    } else {
+        // Normal movement on current or new axis
+        if (keys['ArrowUp'] || keys['ArrowDown']) {
+            if (movementAxis === null || movementAxis === 'row') {
+                if (keys['ArrowUp']) {
+                    playerVelRow -= PLAYER_SPEED;
+                    inputApplied = true;
+                    movementAxis = 'row';
+                }
+                if (keys['ArrowDown']) {
+                    playerVelRow += PLAYER_SPEED;
+                    inputApplied = true;
+                    movementAxis = 'row';
+                }
+            }
+        }
+        
+        if (keys['ArrowLeft'] || keys['ArrowRight']) {
+            if (movementAxis === null || movementAxis === 'col') {
+                if (keys['ArrowLeft']) {
+                    playerVelCol -= PLAYER_SPEED;
+                    inputApplied = true;
+                    movementAxis = 'col';
+                }
+                if (keys['ArrowRight']) {
+                    playerVelCol += PLAYER_SPEED;
+                    inputApplied = true;
+                    movementAxis = 'col';
+                }
             }
         }
     }
@@ -354,8 +396,8 @@ function update() {
         }
     } else {
         // Stop velocity if very small during movement
-        if (Math.abs(playerVelRow) < 0.001) playerVelRow = 0;
-        if (Math.abs(playerVelCol) < 0.001) playerVelCol = 0;
+        if (Math.abs(playerVelRow) < 0.002) playerVelRow = 0;
+        if (Math.abs(playerVelCol) < 0.002) playerVelCol = 0;
     }
     
     // Update projectiles
