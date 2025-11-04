@@ -34,7 +34,7 @@ const PLAYER_SPEED = 0.15;
 const PLAYER_FRICTION = 0.85;
 const PROJECTILE_SPEED = 0.5;
 const JUMP_STRENGTH = 20;
-const GRAVITY = 0.7;
+const GRAVITY = 1.0;
 
 // Audio context for sound effects
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
