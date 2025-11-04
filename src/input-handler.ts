@@ -1,51 +1,78 @@
 // Input handling for keyboard and mouse events
+// Now emits commands instead of directly manipulating state
 
-import { GRID_ROWS, GRID_COLS, JUMP_STRENGTH, PROJECTILE_SPEED } from './constants.js';
-import { screenToGrid } from './grid.js';
-import { playJumpSound, playPhaserSound } from './sound-effects.js';
-import type { GameState, KeyboardState } from './types.js';
+import { GRID_ROWS, GRID_COLS } from "./constants.js";
+import { screenToGrid } from "./grid.js";
+import { playJumpSound, playPhaserSound } from "./sound-effects.js";
+import type { GameCommand, GameState } from "./types.js";
+import { CommandProcessor } from "../shared/command-processor.js";
 
-// Keyboard state tracking
-export const keys: KeyboardState = {};
+// Command processor instance
+const commandProcessor = new CommandProcessor();
+
+// Command queue for this frame
+const commandQueue: GameCommand[] = [];
 
 /**
  * Initialize input handlers for the game
+ * Returns the command processor and a function to get queued commands
  * @param {HTMLCanvasElement} canvas - The game canvas
  * @param {Object} gameState - The game state object
- * @returns {Object} The keys object for passing to physics update
+ * @returns {Object} Command processor and command getter
  */
-export function initInputHandlers(canvas: HTMLCanvasElement, gameState: GameState): KeyboardState {
+export function initInputHandlers(
+    canvas: HTMLCanvasElement,
+    gameState: GameState
+): {
+    processor: CommandProcessor;
+    getCommands: () => GameCommand[];
+} {
+    // Track which keys are currently pressed (for continuous movement)
+    const pressedKeys = new Set<string>();
+
     // Keyboard input tracking
-    document.addEventListener('keydown', (e) => {
-        keys[e.key] = true;
-
-        // Shoot projectile with spacebar
-        if (e.key === ' ') {
-            shootProjectile(gameState);
-            playPhaserSound();
-            e.preventDefault();
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
+        // Prevent duplicate events while key is held
+        if (pressedKeys.has(e.key)) {
+            return;
         }
+        pressedKeys.add(e.key);
 
-        // Jump with x key
-        if (e.key === 'x' || e.key === 'X') {
-            if (gameState.player.jump(JUMP_STRENGTH)) {
+        // Convert key to command
+        const command = keyToCommand(e.key, true);
+        if (command) {
+            commandQueue.push(command);
+
+            // Immediate action commands (non-movement)
+            if (command.type === "JUMP") {
                 playJumpSound();
+                e.preventDefault();
+            } else if (command.type === "SHOOT") {
+                playPhaserSound();
+                e.preventDefault();
             }
-            e.preventDefault();
         }
 
         // Prevent arrow key scrolling
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        if (
+            ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
+        ) {
             e.preventDefault();
         }
     });
 
-    document.addEventListener('keyup', (e) => {
-        keys[e.key] = false;
+    document.addEventListener("keyup", (e: KeyboardEvent) => {
+        pressedKeys.delete(e.key);
+
+        // Send stop movement command
+        const command = keyToCommand(e.key, false);
+        if (command) {
+            commandQueue.push(command);
+        }
     });
 
-    // Handle mouse click
-    canvas.addEventListener('click', (e: MouseEvent) => {
+    // Handle mouse click for teleport
+    canvas.addEventListener("click", (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
@@ -54,13 +81,12 @@ export function initInputHandlers(canvas: HTMLCanvasElement, gameState: GameStat
 
         // Check if clicked tile is within grid bounds
         if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
-            // Move player to clicked position instantly
-            gameState.player.teleportTo(row, col);
+            commandQueue.push({ type: "TELEPORT", row, col });
         }
     });
 
     // Handle mouse move for hover effect
-    canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    canvas.addEventListener("mousemove", (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
@@ -69,14 +95,18 @@ export function initInputHandlers(canvas: HTMLCanvasElement, gameState: GameStat
 
         // Check if over valid tile
         if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
-            canvas.style.cursor = 'pointer';
+            canvas.style.cursor = "pointer";
 
             // Update hovered tile if it changed
-            if (!gameState.hoveredTile || gameState.hoveredTile.row !== row || gameState.hoveredTile.col !== col) {
+            if (
+                !gameState.hoveredTile ||
+                gameState.hoveredTile.row !== row ||
+                gameState.hoveredTile.col !== col
+            ) {
                 gameState.hoveredTile = { row, col };
             }
         } else {
-            canvas.style.cursor = 'default';
+            canvas.style.cursor = "default";
 
             // Clear hovered tile if mouse left the grid
             if (gameState.hoveredTile) {
@@ -85,16 +115,55 @@ export function initInputHandlers(canvas: HTMLCanvasElement, gameState: GameStat
         }
     });
 
-    return keys;
+    return {
+        processor: commandProcessor,
+        getCommands: () => {
+            const commands = [...commandQueue];
+            commandQueue.length = 0; // Clear queue
+            return commands;
+        },
+    };
 }
 
-// Shoot a projectile in upward direction
-function shootProjectile(gameState: GameState): void {
-    const playerPos = gameState.player.getGridPosition();
-    gameState.projectiles.push({
-        row: playerPos.row,
-        col: playerPos.col,
-        velRow: -PROJECTILE_SPEED, // Move up
-        velCol: 0
-    });
+/**
+ * Convert keyboard key to game command
+ * @param key The keyboard key
+ * @param pressed Whether key was pressed (true) or released (false)
+ * @returns GameCommand or null if key doesn't map to a command
+ */
+function keyToCommand(key: string, pressed: boolean): GameCommand | null {
+    // Movement keys
+    if (key === "ArrowUp" || key === "w" || key === "W") {
+        return pressed
+            ? { type: "MOVE", direction: "up", pressed: true }
+            : { type: "STOP_MOVE", direction: "up" };
+    }
+    if (key === "ArrowDown" || key === "s" || key === "S") {
+        return pressed
+            ? { type: "MOVE", direction: "down", pressed: true }
+            : { type: "STOP_MOVE", direction: "down" };
+    }
+    if (key === "ArrowLeft" || key === "a" || key === "A") {
+        return pressed
+            ? { type: "MOVE", direction: "left", pressed: true }
+            : { type: "STOP_MOVE", direction: "left" };
+    }
+    if (key === "ArrowRight" || key === "d" || key === "D") {
+        return pressed
+            ? { type: "MOVE", direction: "right", pressed: true }
+            : { type: "STOP_MOVE", direction: "right" };
+    }
+
+    // Action keys (only on press, not release)
+    if (pressed) {
+        if (key === " ") {
+            return { type: "SHOOT" };
+        }
+        if (key === "x" || key === "X") {
+            return { type: "JUMP" };
+        }
+    }
+
+    return null;
 }
+

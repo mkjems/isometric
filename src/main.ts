@@ -10,10 +10,10 @@ import {
 import { initGrid } from "./grid.ts";
 import { drawGrid } from "./renderer.ts";
 import { initInputHandlers } from "./input-handler.ts";
-import { update } from "./physics.ts";
 import { Player } from "./player.ts";
 import { drawDebugInfo, toggleDebug } from "./debug.ts";
-import type { GameState, KeyboardState } from "./types.ts";
+import type { GameState } from "./types.ts";
+import { updateGameState } from "../shared/game-logic.js";
 
 // Get canvas and context
 const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
@@ -33,13 +33,16 @@ const gameState: GameState = {
   player: new Player(INITIAL_PLAYER_ROW, INITIAL_PLAYER_COL),
 };
 
-// Keyboard state (returned from input handler)
-let keys: KeyboardState;
+// Command processor and command getter
+let commandProcessor: ReturnType<typeof initInputHandlers>["processor"];
+let getCommands: ReturnType<typeof initInputHandlers>["getCommands"];
 
 // Initialize game
 function init() {
   gameState.grid = initGrid();
-  keys = initInputHandlers(canvas, gameState);
+  const handlers = initInputHandlers(canvas, gameState);
+  commandProcessor = handlers.processor;
+  getCommands = handlers.getCommands;
 
   // Add debug toggle listener (press 'D' key)
   document.addEventListener("keydown", (e: KeyboardEvent) => {
@@ -52,7 +55,19 @@ function init() {
 
 // Game loop
 function gameLoop() {
-  update(gameState, keys);
+  // Get commands from this frame
+  const commands = getCommands();
+
+  // Process each command
+  commands.forEach((command) => {
+    commandProcessor.processCommand(command, gameState);
+  });
+
+  // Get current input state and update game
+  const inputState = commandProcessor.getInputState();
+  updateGameState(gameState, inputState);
+
+  // Render
   drawGrid(
     ctx,
     gameState.grid,
@@ -63,6 +78,7 @@ function gameLoop() {
     gameState.player.jumpHeight
   );
   drawDebugInfo(ctx, gameState);
+
   requestAnimationFrame(gameLoop);
 }
 

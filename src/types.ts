@@ -79,3 +79,35 @@ export interface Player {
   jump(jumpStrength: number): boolean;
   teleportTo(row: number, col: number): void;
 }
+
+// ============================================================================
+// COMMAND TYPES - For network-serializable game actions
+// ============================================================================
+
+/**
+ * Direction commands for player movement
+ */
+export type Direction = "up" | "down" | "left" | "right";
+
+/**
+ * Game commands that can be sent from client to server
+ * These represent player intentions and are network-serializable
+ */
+export type GameCommand =
+  | { type: "MOVE"; direction: Direction; pressed: boolean }
+  | { type: "JUMP" }
+  | { type: "SHOOT" }
+  | { type: "TELEPORT"; row: number; col: number }
+  | { type: "STOP_MOVE"; direction: Direction };
+
+/**
+ * Input state derived from commands
+ * Used for processing movement in physics
+ */
+export interface InputState {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+}
+
