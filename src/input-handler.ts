@@ -3,9 +3,10 @@
 import { GRID_ROWS, GRID_COLS, JUMP_STRENGTH, PROJECTILE_SPEED } from './constants.js';
 import { screenToGrid } from './grid.js';
 import { playJumpSound, playPhaserSound } from './sound-effects.js';
+import type { GameState, KeyboardState } from './types.js';
 
 // Keyboard state tracking
-export const keys = {};
+export const keys: KeyboardState = {};
 
 /**
  * Initialize input handlers for the game
@@ -13,18 +14,18 @@ export const keys = {};
  * @param {Object} gameState - The game state object
  * @returns {Object} The keys object for passing to physics update
  */
-export function initInputHandlers(canvas, gameState) {
+export function initInputHandlers(canvas: HTMLCanvasElement, gameState: GameState): KeyboardState {
     // Keyboard input tracking
     document.addEventListener('keydown', (e) => {
         keys[e.key] = true;
-        
+
         // Shoot projectile with spacebar
         if (e.key === ' ') {
             shootProjectile(gameState);
             playPhaserSound();
             e.preventDefault();
         }
-        
+
         // Jump with x key
         if (e.key === 'x' || e.key === 'X') {
             if (gameState.player.jump(JUMP_STRENGTH)) {
@@ -32,7 +33,7 @@ export function initInputHandlers(canvas, gameState) {
             }
             e.preventDefault();
         }
-        
+
         // Prevent arrow key scrolling
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
             e.preventDefault();
@@ -44,13 +45,13 @@ export function initInputHandlers(canvas, gameState) {
     });
 
     // Handle mouse click
-    canvas.addEventListener('click', (e) => {
+    canvas.addEventListener('click', (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        
+
         const { row, col } = screenToGrid(mouseX, mouseY);
-        
+
         // Check if clicked tile is within grid bounds
         if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
             // Move player to clicked position instantly
@@ -59,36 +60,36 @@ export function initInputHandlers(canvas, gameState) {
     });
 
     // Handle mouse move for hover effect
-    canvas.addEventListener('mousemove', (e) => {
+    canvas.addEventListener('mousemove', (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        
+
         const { row, col } = screenToGrid(mouseX, mouseY);
-        
+
         // Check if over valid tile
         if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
             canvas.style.cursor = 'pointer';
-            
+
             // Update hovered tile if it changed
             if (!gameState.hoveredTile || gameState.hoveredTile.row !== row || gameState.hoveredTile.col !== col) {
                 gameState.hoveredTile = { row, col };
             }
         } else {
             canvas.style.cursor = 'default';
-            
+
             // Clear hovered tile if mouse left the grid
             if (gameState.hoveredTile) {
                 gameState.hoveredTile = null;
             }
         }
     });
-    
+
     return keys;
 }
 
 // Shoot a projectile in upward direction
-function shootProjectile(gameState) {
+function shootProjectile(gameState: GameState): void {
     const playerPos = gameState.player.getGridPosition();
     gameState.projectiles.push({
         row: playerPos.row,
