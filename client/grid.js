@@ -1,6 +1,7 @@
 // Grid initialization and coordinate conversion utilities
 
 import { TILE_WIDTH, TILE_HEIGHT, GRID_ROWS, GRID_COLS, OFFSET_X, OFFSET_Y } from './constants.js';
+import { TILE_COLOR_PRIMARY, TILE_COLOR_SECONDARY } from './rendering-constants.js';
 
 // Initialize the grid with tiles
 export function initGrid() {
@@ -21,7 +22,7 @@ export function initGrid() {
 
 // Get color based on position (checkerboard pattern)
 export function getColorForTile(row, col) {
-    return (row + col) % 2 === 0 ? '#4a9eff' : '#4598f6ff';
+    return (row + col) % 2 === 0 ? TILE_COLOR_PRIMARY : TILE_COLOR_SECONDARY;
 }
 
 // Convert grid coordinates to screen coordinates

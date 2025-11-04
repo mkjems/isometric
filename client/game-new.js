@@ -5,6 +5,8 @@ import { initGrid } from './grid.js';
 import { drawGrid } from './renderer.js';
 import { initInputHandlers } from './input-handler.js';
 import { update } from './physics.js';
+import { Player } from './player.js';
+import { drawDebugInfo, toggleDebug } from './debug.js';
 
 // Get canvas and context
 const canvas = document.getElementById('gameCanvas');
@@ -20,34 +22,40 @@ const gameState = {
     hoveredTile: null,
     projectiles: [],
     
-    // Player state
-    playerRow: INITIAL_PLAYER_ROW,
-    playerCol: INITIAL_PLAYER_COL,
-    playerVelRow: 0,
-    playerVelCol: 0,
-    movementAxis: null, // 'row' or 'col' or null when stopped
-    playerJumpHeight: 0,
-    playerJumpVelocity: 0
+    // Player - now using Player class
+    player: new Player(INITIAL_PLAYER_ROW, INITIAL_PLAYER_COL)
 };
+
+// Keyboard state (returned from input handler)
+let keys;
 
 // Initialize game
 function init() {
     gameState.grid = initGrid();
-    initInputHandlers(canvas, gameState);
+    keys = initInputHandlers(canvas, gameState);
+    
+    // Add debug toggle listener (press 'D' key)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'd' || e.key === 'D') {
+            const enabled = toggleDebug();
+            console.log(`Debug mode: ${enabled ? 'ON' : 'OFF'}`);
+        }
+    });
 }
 
 // Game loop
 function gameLoop() {
-    update(gameState);
+    update(gameState, keys);
     drawGrid(
         ctx, 
         gameState.grid, 
         gameState.hoveredTile, 
         gameState.projectiles, 
-        gameState.playerRow, 
-        gameState.playerCol, 
-        gameState.playerJumpHeight
+        gameState.player.row, 
+        gameState.player.col, 
+        gameState.player.jumpHeight
     );
+    drawDebugInfo(ctx, gameState);
     requestAnimationFrame(gameLoop);
 }
 

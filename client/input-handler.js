@@ -7,7 +7,12 @@ import { playJumpSound, playPhaserSound } from './sound-effects.js';
 // Keyboard state tracking
 export const keys = {};
 
-// Initialize input handlers
+/**
+ * Initialize input handlers for the game
+ * @param {HTMLCanvasElement} canvas - The game canvas
+ * @param {Object} gameState - The game state object
+ * @returns {Object} The keys object for passing to physics update
+ */
 export function initInputHandlers(canvas, gameState) {
     // Keyboard input tracking
     document.addEventListener('keydown', (e) => {
@@ -22,8 +27,7 @@ export function initInputHandlers(canvas, gameState) {
         
         // Jump with x key
         if (e.key === 'x' || e.key === 'X') {
-            if (gameState.playerJumpHeight === 0 && gameState.playerJumpVelocity === 0) {
-                gameState.playerJumpVelocity = JUMP_STRENGTH;
+            if (gameState.player.jump(JUMP_STRENGTH)) {
                 playJumpSound();
             }
             e.preventDefault();
@@ -50,10 +54,7 @@ export function initInputHandlers(canvas, gameState) {
         // Check if clicked tile is within grid bounds
         if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
             // Move player to clicked position instantly
-            gameState.playerRow = row;
-            gameState.playerCol = col;
-            gameState.playerVelRow = 0;
-            gameState.playerVelCol = 0;
+            gameState.player.teleportTo(row, col);
         }
     });
 
@@ -82,13 +83,16 @@ export function initInputHandlers(canvas, gameState) {
             }
         }
     });
+    
+    return keys;
 }
 
 // Shoot a projectile in upward direction
 function shootProjectile(gameState) {
+    const playerPos = gameState.player.getGridPosition();
     gameState.projectiles.push({
-        row: Math.floor(gameState.playerRow),
-        col: Math.floor(gameState.playerCol),
+        row: playerPos.row,
+        col: playerPos.col,
         velRow: -PROJECTILE_SPEED, // Move up
         velCol: 0
     });

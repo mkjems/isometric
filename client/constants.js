@@ -20,6 +20,11 @@ export const PLAYER_FRICTION = 0.85;
 export const JUMP_STRENGTH = 20;
 export const GRAVITY = 1.0;
 
+// Physics thresholds
+export const VELOCITY_THRESHOLD = 0.005;
+export const SNAP_SPEED = 0.2;
+export const SNAP_THRESHOLD = 0.01;
+
 // Projectile settings
 export const PROJECTILE_SPEED = 0.5;
 

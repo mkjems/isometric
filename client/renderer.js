@@ -2,6 +2,24 @@
 
 import { TILE_WIDTH, TILE_HEIGHT, GRID_ROWS, GRID_COLS, CANVAS_WIDTH, CANVAS_HEIGHT } from './constants.js';
 import { gridToScreen } from './grid.js';
+import {
+    BOX_HEIGHT,
+    TILE_HOVER_COLOR,
+    TILE_HOVER_BORDER,
+    TILE_BORDER_COLOR,
+    BOX_COLOR_LEFT,
+    BOX_COLOR_RIGHT,
+    BOX_COLOR_TOP,
+    BOX_BORDER_COLOR,
+    PROJECTILE_FILL_COLOR,
+    PROJECTILE_GLOW_COLOR,
+    PROJECTILE_GLOW_WIDTH,
+    SHADOW_COLOR,
+    SHADOW_OPACITY,
+    TILE_BORDER_WIDTH,
+    TILE_HOVER_BORDER_WIDTH,
+    BOX_BORDER_WIDTH
+} from './rendering-constants.js';
 
 // Draw a single isometric tile
 export function drawTile(ctx, row, col, color, highlight = false, hover = false) {
@@ -19,20 +37,20 @@ export function drawTile(ctx, row, col, color, highlight = false, hover = false)
     
     // Fill tile
     if (hover && !highlight) {
-        ctx.fillStyle = '#90d5ff';
+        ctx.fillStyle = TILE_HOVER_COLOR;
     } else {
         ctx.fillStyle = color;
     }
     ctx.fill();
     
     // Draw outline
-    ctx.strokeStyle = hover && !highlight ? '#5599ff' : '#2a2a2a';
-    ctx.lineWidth = hover && !highlight ? 2 : 1;
+    ctx.strokeStyle = hover && !highlight ? TILE_HOVER_BORDER : TILE_BORDER_COLOR;
+    ctx.lineWidth = hover && !highlight ? TILE_HOVER_BORDER_WIDTH : TILE_BORDER_WIDTH;
     ctx.stroke();
 
     // Draw 3D green box if highlighted
     if (highlight) {
-        const boxHeight = 40;
+        const boxHeight = BOX_HEIGHT;
         
         // Left face (vertical)
         ctx.beginPath();
@@ -41,10 +59,10 @@ export function drawTile(ctx, row, col, color, highlight = false, hover = false)
         ctx.lineTo(x, y + TILE_HEIGHT - boxHeight);
         ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight);
         ctx.closePath();
-        ctx.fillStyle = '#44cc44';
+        ctx.fillStyle = BOX_COLOR_LEFT;
         ctx.fill();
-        ctx.strokeStyle = '#228822';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = BOX_BORDER_COLOR;
+        ctx.lineWidth = BOX_BORDER_WIDTH;
         ctx.stroke();
         
         // Right face (vertical)
@@ -54,10 +72,10 @@ export function drawTile(ctx, row, col, color, highlight = false, hover = false)
         ctx.lineTo(x, y + TILE_HEIGHT - boxHeight);
         ctx.lineTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight);
         ctx.closePath();
-        ctx.fillStyle = '#55dd55';
+        ctx.fillStyle = BOX_COLOR_RIGHT;
         ctx.fill();
-        ctx.strokeStyle = '#228822';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = BOX_BORDER_COLOR;
+        ctx.lineWidth = BOX_BORDER_WIDTH;
         ctx.stroke();
         
         // Top face (diamond)
@@ -67,10 +85,10 @@ export function drawTile(ctx, row, col, color, highlight = false, hover = false)
         ctx.lineTo(x, y + TILE_HEIGHT - boxHeight);
         ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight);
         ctx.closePath();
-        ctx.fillStyle = '#66ff66';
+        ctx.fillStyle = BOX_COLOR_TOP;
         ctx.fill();
-        ctx.strokeStyle = '#228822';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = BOX_BORDER_COLOR;
+        ctx.lineWidth = BOX_BORDER_WIDTH;
         ctx.stroke();
     }
 
@@ -82,7 +100,7 @@ export function drawShadow(ctx, row, col) {
     const { x, y } = gridToScreen(row, col);
     
     ctx.save();
-    ctx.globalAlpha = 0.3;
+    ctx.globalAlpha = SHADOW_OPACITY;
     ctx.beginPath();
     
     // Draw shadow as a full tile-sized diamond
@@ -92,7 +110,7 @@ export function drawShadow(ctx, row, col) {
     ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2);
     ctx.closePath();
     
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = SHADOW_COLOR;
     ctx.fill();
     ctx.restore();
 }
@@ -114,20 +132,20 @@ export function drawTileWithJump(ctx, row, col, color, highlight = false, hover 
     
     // Fill tile
     if (hover && !highlight) {
-        ctx.fillStyle = '#90d5ff';
+        ctx.fillStyle = TILE_HOVER_COLOR;
     } else {
         ctx.fillStyle = color;
     }
     ctx.fill();
     
     // Draw outline
-    ctx.strokeStyle = hover && !highlight ? '#5599ff' : '#2a2a2a';
-    ctx.lineWidth = hover && !highlight ? 2 : 1;
+    ctx.strokeStyle = hover && !highlight ? TILE_HOVER_BORDER : TILE_BORDER_COLOR;
+    ctx.lineWidth = hover && !highlight ? TILE_HOVER_BORDER_WIDTH : TILE_BORDER_WIDTH;
     ctx.stroke();
 
     // Draw 3D green box if highlighted
     if (highlight) {
-        const boxHeight = 40;
+        const boxHeight = BOX_HEIGHT;
         
         // Left face (vertical)
         ctx.beginPath();
@@ -136,10 +154,10 @@ export function drawTileWithJump(ctx, row, col, color, highlight = false, hover 
         ctx.lineTo(x, y + TILE_HEIGHT - boxHeight + yOffset);
         ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
         ctx.closePath();
-        ctx.fillStyle = '#44cc44';
+        ctx.fillStyle = BOX_COLOR_LEFT;
         ctx.fill();
-        ctx.strokeStyle = '#228822';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = BOX_BORDER_COLOR;
+        ctx.lineWidth = BOX_BORDER_WIDTH;
         ctx.stroke();
         
         // Right face (vertical)
@@ -149,10 +167,10 @@ export function drawTileWithJump(ctx, row, col, color, highlight = false, hover 
         ctx.lineTo(x, y + TILE_HEIGHT - boxHeight + yOffset);
         ctx.lineTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
         ctx.closePath();
-        ctx.fillStyle = '#55dd55';
+        ctx.fillStyle = BOX_COLOR_RIGHT;
         ctx.fill();
-        ctx.strokeStyle = '#228822';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = BOX_BORDER_COLOR;
+        ctx.lineWidth = BOX_BORDER_WIDTH;
         ctx.stroke();
         
         // Top face (diamond)
@@ -162,10 +180,10 @@ export function drawTileWithJump(ctx, row, col, color, highlight = false, hover 
         ctx.lineTo(x, y + TILE_HEIGHT - boxHeight + yOffset);
         ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
         ctx.closePath();
-        ctx.fillStyle = '#66ff66';
+        ctx.fillStyle = BOX_COLOR_TOP;
         ctx.fill();
-        ctx.strokeStyle = '#228822';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = BOX_BORDER_COLOR;
+        ctx.lineWidth = BOX_BORDER_WIDTH;
         ctx.stroke();
     }
 
@@ -187,12 +205,12 @@ export function drawProjectile(ctx, row, col) {
     ctx.closePath();
     
     // Fill with bright light color
-    ctx.fillStyle = '#ffff99';
+    ctx.fillStyle = PROJECTILE_FILL_COLOR;
     ctx.fill();
     
     // Draw glowing outline
-    ctx.strokeStyle = '#ffff00';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = PROJECTILE_GLOW_COLOR;
+    ctx.lineWidth = PROJECTILE_GLOW_WIDTH;
     ctx.stroke();
     
     ctx.restore();
