@@ -4,54 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Isometric Grid Game</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: Arial, sans-serif;
-        }
-        canvas {
-            border: 2px solid #333;
-            background: #2a2a2a;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        #info {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        #musicToggle {
-            margin-top: 10px;
-            padding: 5px 10px;
-            background: rgba(102, 126, 234, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            color: white;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-        #musicToggle:hover {
-            background: rgba(102, 126, 234, 1);
-            border-color: rgba(255, 255, 255, 0.6);
-        }
-        #musicToggle.playing {
-            background: rgba(76, 175, 80, 0.8);
-        }
-        #musicToggle.playing:hover {
-            background: rgba(76, 175, 80, 1);
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="info">
@@ -62,6 +15,6 @@
     <canvas id="gameCanvas"></canvas>
     <script src="backgroundMusic.js"></script>
     <script src="musicToggle.js"></script>
-    <script src="game.js"></script>
+    <script type="module" src="game-new.js"></script>
 </body>
 </html>
