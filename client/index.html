@@ -30,15 +30,38 @@
             border-radius: 8px;
             font-size: 14px;
         }
+        #musicToggle {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background: rgba(102, 126, 234, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        #musicToggle:hover {
+            background: rgba(102, 126, 234, 1);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        #musicToggle.playing {
+            background: rgba(76, 175, 80, 0.8);
+        }
+        #musicToggle.playing:hover {
+            background: rgba(76, 175, 80, 1);
+        }
     </style>
 </head>
 <body>
     <div id="info">
         <h3>Isometric Grid Game</h3>
         <p>Click on tiles to select them</p>
+        <button id="musicToggle" class="">🎵 Music: OFF</button>
     </div>
     <canvas id="gameCanvas"></canvas>
     <script src="backgroundMusic.js"></script>
+    <script src="musicToggle.js"></script>
     <script src="game.js"></script>
 </body>
 </html>

@@ -7,6 +7,7 @@ class BackgroundMusic {
     this.isPlaying = false;
     this.currentSection = 'verse';
     this.initialized = false;
+    this.timeoutId = null;
     
     // Note frequencies
     this.notes = {
@@ -263,7 +264,7 @@ class BackgroundMusic {
     // Switch between verse and chorus
     const sectionDuration = melody.reduce((sum, note) => sum + note.dur, 0) * 1000;
     
-    setTimeout(() => {
+    this.timeoutId = setTimeout(() => {
       this.currentSection = this.currentSection === 'verse' ? 'chorus' : 'verse';
       this.playSong();
     }, sectionDuration + 100);
@@ -289,22 +290,26 @@ class BackgroundMusic {
   // Stop the background music
   stop() {
     this.isPlaying = false;
+    
+    // Clear the timeout to stop scheduling new music
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+  }
+  
+  // Toggle music on/off
+  toggle() {
+    if (this.isPlaying) {
+      this.stop();
+    } else {
+      this.start();
+    }
+    return this.isPlaying;
   }
 }
 
 // Create a global instance
 const bgMusic = new BackgroundMusic();
 
-// Auto-start when page loads (after user interaction)
-window.addEventListener('load', () => {
-  // Start music on first user interaction
-  const startMusic = () => {
-    bgMusic.start();
-    // Remove listeners after first interaction
-    document.removeEventListener('click', startMusic);
-    document.removeEventListener('keydown', startMusic);
-  };
-  
-  document.addEventListener('click', startMusic);
-  document.addEventListener('keydown', startMusic);
-});
+
