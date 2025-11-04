@@ -265,6 +265,7 @@ class BackgroundMusic {
     const sectionDuration = melody.reduce((sum, note) => sum + note.dur, 0) * 1000;
     
     this.timeoutId = setTimeout(() => {
+      if (!this.isPlaying) return; // Extra safety check
       this.currentSection = this.currentSection === 'verse' ? 'chorus' : 'verse';
       this.playSong();
     }, sectionDuration + 100);
@@ -295,6 +296,11 @@ class BackgroundMusic {
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
+    }
+    
+    // Stop all audio immediately by suspending the audio context
+    if (this.audioCtx && this.audioCtx.state === 'running') {
+      this.audioCtx.suspend();
     }
   }
   
