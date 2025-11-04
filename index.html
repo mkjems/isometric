@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isometric Grid Game</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    <div id="info">
+        <h3>Isometric Grid Game</h3>
+        <p>Click on tiles to select them</p>
+        <p style="font-size: 12px; opacity: 0.8;">Press D to toggle debug mode</p>
+        <button id="musicToggle">🔇 Music: OFF</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- Vite will inject the TypeScript modules -->
+    <script type="module" src="/src/backgroundMusic.ts"></script>
+    <script type="module" src="/src/musicToggle.ts"></script>
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

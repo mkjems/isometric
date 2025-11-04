@@ -5,5 +5,12 @@
   },
   "compilerOptions": {
     "lib": ["deno.ns", "deno.window"]
+  },
+  "exclude": ["src/", "client/", "node_modules/", "dist/"],
+  "lint": {
+    "exclude": ["src/", "client/", "node_modules/", "dist/"]
+  },
+  "fmt": {
+    "exclude": ["src/", "client/", "node_modules/", "dist/"]
   }
 }
