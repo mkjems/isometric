@@ -1,6 +1,6 @@
 // Server-side authoritative game loop running at 60 FPS
 
-import type { GameCommand } from "../src/types.ts";
+import type { GameCommand, GameState, Player } from "../src/types.ts";
 import type { GameSessionManager } from "./game-session.ts";
 import { CommandProcessor } from "../shared/command-processor.ts";
 import { updateGameState } from "../shared/game-logic.ts";
@@ -21,29 +21,23 @@ export class GameLoop {
         // Initialize processors for both players with their respective IDs
         this.commandProcessors.set(1, new CommandProcessor(1));
         this.commandProcessors.set(2, new CommandProcessor(2));
-        console.log(`🔄 GameLoop initialized (${TICK_RATE} FPS) with 2 command processors`);
     }
 
     /**
      * Add a command to the queue to be processed on next tick
      */
     queueCommand(playerId: number, command: GameCommand): void {
-        console.log(`⚡ queueCommand: Player ${playerId} - ${command.type}`);
         this.commandQueue.push({ playerId, command });
-        console.log(`   Queue length: ${this.commandQueue.length}`);
     }
 
     /**
      * Start the game loop
      */
     start(): void {
-        if (this.running) {
-            console.log("⚠️ GameLoop.start() called but already running");
-            return;
-        }
+        if (this.running) return;
 
         this.running = true;
-        console.log(`▶️ GameLoop.start() - Starting at ${TICK_RATE} FPS (${TICK_INTERVAL}ms per tick)`);
+        console.log(`▶️ Game loop started (${TICK_RATE} FPS)`);
 
         // Use setInterval for server-side game loop
         this.intervalId = setInterval(() => {
@@ -64,7 +58,7 @@ export class GameLoop {
             this.intervalId = null;
         }
 
-        console.log("⏸️ GameLoop stopped");
+        console.log("⏸️ Game loop stopped");
     }
 
     /**
@@ -76,11 +70,6 @@ export class GameLoop {
         // Only run if we have an active game
         if (!session || !this.sessionManager.isGameActive()) {
             return;
-        }
-
-        // Log first few ticks for debugging
-        if (session.tickCounter < 3) {
-            console.log(`🔄 Tick ${session.tickCounter + 1}: Processing ${this.commandQueue.length} commands`);
         }
 
         // Process all queued commands for this tick
@@ -105,7 +94,16 @@ export class GameLoop {
         session.tickCounter++;
 
         // Convert players Map to a plain object for JSON serialization
-        const playersObject: Record<number, any> = {};
+        type PlayerData = {
+            row: number;
+            col: number;
+            velRow: number;
+            velCol: number;
+            movementAxis: string | null;
+            jumpHeight: number;
+            jumpVelocity: number;
+        };
+        const playersObject: Record<number, PlayerData> = {};
         for (const [playerId, player] of session.gameState.players.entries()) {
             playersObject[playerId] = {
                 row: player.row,
@@ -127,8 +125,8 @@ export class GameLoop {
                 selectedTile: session.gameState.selectedTile,
                 hoveredTile: session.gameState.hoveredTile,
                 projectiles: session.gameState.projectiles,
-                players: playersObject as any, // Will be deserialized on client
-            },
+                players: playersObject as unknown as Map<number, Player>,
+            } as GameState,
         });
     }
 

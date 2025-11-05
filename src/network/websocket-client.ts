@@ -162,13 +162,11 @@ export class WebSocketClient {
      * Handle messages from the server
      */
     private handleServerMessage(message: ServerMessage): void {
-        console.log("📨 Server message:", message.type);
-
         switch (message.type) {
             case "playerAssignment":
                 this.connectionState.playerId = message.playerId;
                 this.connectionState.playerNumber = message.playerNumber;
-                console.log(`🎮 Assigned as Player ${message.playerNumber}`);
+                console.log(`🎮 You are Player ${message.playerNumber}`);
                 break;
 
             case "waitingForPlayer":
@@ -181,9 +179,6 @@ export class WebSocketClient {
 
             case "gameState":
                 // Forward game state to callback
-                console.log("🎮 Received gameState:", message.state);
-                console.log("  Players in state:", message.state.players);
-
                 if (this.gameStateCallback) {
                     // Convert players object back to Map
                     const playersMap = new Map<number, any>();
