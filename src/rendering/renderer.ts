@@ -267,8 +267,15 @@ export function drawGrid(
         drawProjectile(ctx, proj.row, proj.col);
     });
 
-    // Draw all players
-    for (const [playerId, player] of players.entries()) {
+    // Draw all players sorted back-to-front for proper depth ordering
+    // In isometric view, objects with higher (row + col) are further back
+    const sortedPlayers = Array.from(players.entries()).sort((a, b) => {
+        const depthA = a[1].row + a[1].col;
+        const depthB = b[1].row + b[1].col;
+        return depthA - depthB; // Sort ascending (back to front: low depth drawn first, high depth drawn last)
+    });
+
+    for (const [playerId, player] of sortedPlayers) {
         // Draw shadow if player is jumping
         if (player.jumpHeight > 0) {
             drawShadow(ctx, player.row, player.col);
@@ -293,5 +300,17 @@ export function drawGrid(
             };
 
         drawTileWithJump(ctx, player.row, player.col, tile.color, true, false, player.jumpHeight, playerColors);
+        
+        // Draw position label for debugging
+        const { x, y } = gridToScreen(player.row, player.col);
+        ctx.save();
+        ctx.font = '12px monospace';
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 3;
+        const label = `P${playerId} (${Math.floor(player.row)},${Math.floor(player.col)})`;
+        ctx.strokeText(label, x - 30, y - 40);
+        ctx.fillText(label, x - 30, y - 40);
+        ctx.restore();
     }
 }
