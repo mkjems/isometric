@@ -329,6 +329,11 @@ class BackgroundMusic {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
     }
+
+    // Suspend the audio context to stop all currently playing sounds
+    if (this.audioCtx && this.audioCtx.state === 'running') {
+      this.audioCtx.suspend();
+    }
   }
 
   // Toggle music on/off

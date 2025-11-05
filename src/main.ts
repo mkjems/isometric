@@ -1,6 +1,7 @@
 // Main game orchestrator - ties all modules together
 
 import "./styles.css";
+import "./audio/musicToggle.ts";
 import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
