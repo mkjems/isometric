@@ -1,7 +1,16 @@
 // Main Deno server for isometric multiplayer game
-// Phase 1: Basic static file server
+// Phase 1: WebSocket server with authoritative game loop
+
+import { GameSessionManager } from "./game-session.ts";
+import { GameLoop } from "./game-loop.ts";
+import { WebSocketHandler } from "./websocket-handler.ts";
 
 const PORT = 8000;
+
+// Initialize multiplayer components
+const sessionManager = new GameSessionManager();
+const gameLoop = new GameLoop(sessionManager);
+const wsHandler = new WebSocketHandler(sessionManager, gameLoop);
 
 // MIME types for static files
 const MIME_TYPES: Record<string, string> = {
@@ -46,6 +55,13 @@ async function handleRequest(req: Request): Promise<Response> {
 
   console.log(`${req.method} ${pathname}`);
 
+  // Handle WebSocket upgrade
+  if (req.headers.get("upgrade") === "websocket") {
+    const { socket, response } = Deno.upgradeWebSocket(req);
+    wsHandler.handleConnection(socket);
+    return response;
+  }
+
   // Default to index.html for root
   if (pathname === "/") {
     pathname = "/index.html";
@@ -58,9 +74,11 @@ async function handleRequest(req: Request): Promise<Response> {
 }
 
 function startServer() {
-  console.log(`🚀 Starting Isometric Game Server...`);
+  console.log(`🚀 Starting Isometric Multiplayer Game Server...`);
   console.log(`📁 Serving static files from: ./dist/`);
-  console.log(`🌐 Server running at: http://localhost:${PORT}`);
+  console.log(`🌐 HTTP Server: http://localhost:${PORT}`);
+  console.log(`🔌 WebSocket: ws://localhost:${PORT}`);
+  console.log(`👥 Max players: 2`);
   console.log(`\nPress Ctrl+C to stop\n`);
 
   Deno.serve({ port: PORT }, handleRequest);
