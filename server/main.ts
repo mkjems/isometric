@@ -51,15 +51,15 @@ async function handleRequest(req: Request): Promise<Response> {
     pathname = "/index.html";
   }
 
-  // Construct file path (serve from client directory)
-  const filePath = `./client${pathname}`;
+  // Construct file path (serve from dist directory)
+  const filePath = `./dist${pathname}`;
 
   return await serveStaticFile(filePath);
 }
 
 function startServer() {
   console.log(`🚀 Starting Isometric Game Server...`);
-  console.log(`📁 Serving static files from: ./client/`);
+  console.log(`📁 Serving static files from: ./dist/`);
   console.log(`🌐 Server running at: http://localhost:${PORT}`);
   console.log(`\nPress Ctrl+C to stop\n`);
 
