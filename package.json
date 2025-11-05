@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "server:dev": "deno task dev",
+    "server:start": "deno task start"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.46.3",
