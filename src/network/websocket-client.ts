@@ -105,9 +105,6 @@ export class WebSocketClient {
         }
     }
 
-    /**
-     * Disconnect from the server
-     */
     disconnect(): void {
         if (this.ws) {
             this.ws.close();
@@ -116,9 +113,6 @@ export class WebSocketClient {
         this.updateConnectionState("disconnected", "Disconnected");
     }
 
-    /**
-     * Send a command to the server
-     */
     sendCommand(command: GameCommand): void {
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
             console.warn("Cannot send command: not connected");
