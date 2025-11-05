@@ -21,19 +21,24 @@ export class GameSessionManager {
      * Add a new player to the session
      */
     addPlayer(socket: WebSocket): PlayerConnection | null {
+        console.log("📋 addPlayer() called");
+
         // Create session if it doesn't exist
         if (!this.session) {
+            console.log("  → Creating new session");
             this.session = this.createNewSession();
         }
 
         // Check if session is full (max 2 players)
         if (this.session.players.size >= 2) {
-            console.log("❌ Session full, rejecting new player");
+            console.log("  ❌ Session full, rejecting new player");
             return null;
         }
 
         const playerId = this.nextPlayerId++;
         const playerNumber = (this.session.players.size + 1) as 1 | 2;
+
+        console.log(`  → Creating connection for Player ${playerId} (Player ${playerNumber})`);
 
         const connection: PlayerConnection = {
             id: playerId,
@@ -45,26 +50,11 @@ export class GameSessionManager {
         this.session.players.set(playerId, connection);
 
         console.log(
-            `✅ Player ${playerId} joined as Player ${playerNumber} (${this.session.players.size}/2)`
+            `  ✅ Player ${playerId} added as Player ${playerNumber} (${this.session.players.size}/2 players in session)`
         );
 
-        // Send player assignment
-        this.sendToPlayer(playerId, {
-            type: "playerAssignment",
-            playerId,
-            playerNumber,
-        });
-
-        // If we have 2 players, start the game
-        if (this.session.players.size === 2) {
-            this.startGame();
-        } else {
-            // Tell player to wait
-            this.sendToPlayer(playerId, {
-                type: "waitingForPlayer",
-                message: "Waiting for second player to join...",
-            });
-        }
+        // Note: Initial messages (playerAssignment, waitingForPlayer) are sent
+        // by WebSocketHandler.onopen to ensure socket is ready
 
         return connection;
     }
@@ -110,15 +100,36 @@ export class GameSessionManager {
      * Send message to a specific player
      */
     sendToPlayer(playerId: number, message: ServerMessage): void {
-        if (!this.session) return;
+        console.log(`📤 sendToPlayer(${playerId}, ${message.type})`);
+
+        if (!this.session) {
+            console.log("  ⚠️ No session exists");
+            return;
+        }
 
         const player = this.session.players.get(playerId);
-        if (!player || !player.connected) return;
+        if (!player) {
+            console.log(`  ⚠️ Player ${playerId} not found in session`);
+            return;
+        }
+
+        if (!player.connected) {
+            console.log(`  ⚠️ Player ${playerId} is marked as disconnected`);
+            return;
+        }
+
+        console.log(`  → Socket readyState: ${player.socket.readyState} (0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED)`);
 
         try {
-            player.socket.send(JSON.stringify(message));
+            // Check if socket is open before sending
+            if (player.socket.readyState === WebSocket.OPEN) {
+                player.socket.send(JSON.stringify(message));
+                console.log(`  ✅ Message sent to player ${playerId}`);
+            } else {
+                console.log(`  ⏳ Socket not ready for player ${playerId}, readyState=${player.socket.readyState}`);
+            }
         } catch (error) {
-            console.error(`Error sending to player ${playerId}:`, error);
+            console.error(`  ❌ Error sending to player ${playerId}:`, error);
         }
     }
 
@@ -126,17 +137,30 @@ export class GameSessionManager {
      * Broadcast message to all connected players
      */
     broadcast(message: ServerMessage): void {
-        if (!this.session) return;
+        console.log(`📢 broadcast(${message.type}) to ${this.session?.players.size || 0} players`);
 
+        if (!this.session) {
+            console.log("  ⚠️ No session exists");
+            return;
+        }
+
+        let sentCount = 0;
         for (const player of this.session.players.values()) {
             if (player.connected) {
                 try {
-                    player.socket.send(JSON.stringify(message));
+                    if (player.socket.readyState === WebSocket.OPEN) {
+                        player.socket.send(JSON.stringify(message));
+                        sentCount++;
+                        console.log(`  ✅ Sent to player ${player.id}`);
+                    } else {
+                        console.log(`  ⏳ Player ${player.id} socket not ready (state=${player.socket.readyState})`);
+                    }
                 } catch (error) {
-                    console.error(`Error broadcasting to player ${player.id}:`, error);
+                    console.error(`  ❌ Error broadcasting to player ${player.id}:`, error);
                 }
             }
         }
+        console.log(`  📊 Broadcast complete: ${sentCount}/${this.session.players.size} messages sent`);
     }
 
     /**
@@ -145,12 +169,20 @@ export class GameSessionManager {
     private createNewSession(): GameSession {
         console.log("🆕 Creating new game session");
 
+        // Create players map with two players at different starting positions
+        const players = new Map<number, Player>();
+        players.set(1, new Player(INITIAL_PLAYER_ROW - 3, INITIAL_PLAYER_COL - 3)); // Player 1 (top-left)
+        players.set(2, new Player(INITIAL_PLAYER_ROW + 3, INITIAL_PLAYER_COL + 3)); // Player 2 (bottom-right)
+
+        console.log(`  → Player 1 spawned at (${INITIAL_PLAYER_ROW - 3}, ${INITIAL_PLAYER_COL - 3})`);
+        console.log(`  → Player 2 spawned at (${INITIAL_PLAYER_ROW + 3}, ${INITIAL_PLAYER_COL + 3})`);
+
         const gameState: GameState = {
             grid: initGrid(),
             selectedTile: null,
             hoveredTile: null,
             projectiles: [],
-            player: new Player(INITIAL_PLAYER_ROW, INITIAL_PLAYER_COL),
+            players: players,
         };
 
         return {
@@ -165,11 +197,16 @@ export class GameSessionManager {
     /**
      * Start the game when both players are connected
      */
-    private startGame(): void {
-        if (!this.session) return;
+    startGame(): void {
+        console.log("🎮 startGame() called");
+
+        if (!this.session) {
+            console.log("  ⚠️ No session exists");
+            return;
+        }
 
         this.session.started = true;
-        console.log("🎮 Game starting with 2 players!");
+        console.log(`  ✅ Game started! Players in session: ${this.session.players.size}`);
 
         this.broadcast({
             type: "gameStart",

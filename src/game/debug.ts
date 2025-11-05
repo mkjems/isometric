@@ -50,7 +50,8 @@ export function drawDebugInfo(ctx: CanvasRenderingContext2D, gameState: GameStat
 
     updateFps();
 
-    const player = gameState.player;
+    // Get first player for debug display (or just show count if multiple)
+    const player = gameState.players.get(1) || Array.from(gameState.players.values())[0];
 
     ctx.save();
     ctx.font = '14px monospace';

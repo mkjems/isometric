@@ -16,6 +16,18 @@ export const BOX_COLOR_RIGHT = '#55dd55';
 export const BOX_COLOR_TOP = '#66ff66';
 export const BOX_BORDER_COLOR = '#228822';
 
+// Player 1 colors (Green)
+export const PLAYER1_COLOR_LEFT = '#44cc44';
+export const PLAYER1_COLOR_RIGHT = '#55dd55';
+export const PLAYER1_COLOR_TOP = '#66ff66';
+export const PLAYER1_BORDER_COLOR = '#228822';
+
+// Player 2 colors (Blue)
+export const PLAYER2_COLOR_LEFT = '#4488cc';
+export const PLAYER2_COLOR_RIGHT = '#5599dd';
+export const PLAYER2_COLOR_TOP = '#66aaff';
+export const PLAYER2_BORDER_COLOR = '#225588';
+
 // Projectile colors
 export const PROJECTILE_FILL_COLOR = '#ffff99';
 export const PROJECTILE_GLOW_COLOR = '#ffff00';

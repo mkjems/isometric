@@ -20,6 +20,12 @@ export class CommandProcessor {
         right: false,
     };
 
+    private playerId: number; // Which player this processor is for
+
+    constructor(playerId: number = 1) {
+        this.playerId = playerId;
+    }
+
     /**
      * Process a command and update input state or trigger actions
      * @param command The command to process
@@ -27,6 +33,12 @@ export class CommandProcessor {
      * @returns true if command was processed successfully
      */
     processCommand(command: GameCommand, gameState: GameState): boolean {
+        const player = gameState.players.get(this.playerId);
+        if (!player) {
+            console.warn(`CommandProcessor: Player ${this.playerId} not found`);
+            return false;
+        }
+
         switch (command.type) {
             case "MOVE":
                 this.inputState[command.direction] = command.pressed;
@@ -37,10 +49,10 @@ export class CommandProcessor {
                 return true;
 
             case "JUMP":
-                return gameState.player.jump(JUMP_STRENGTH);
+                return player.jump(JUMP_STRENGTH);
 
             case "SHOOT":
-                this.shootProjectile(gameState);
+                this.shootProjectile(gameState, player);
                 return true;
 
             case "TELEPORT":
@@ -51,7 +63,7 @@ export class CommandProcessor {
                     command.col >= 0 &&
                     command.col < GRID_COLS
                 ) {
-                    gameState.player.teleportTo(command.row, command.col);
+                    player.teleportTo(command.row, command.col);
                     return true;
                 }
                 return false;
@@ -82,8 +94,8 @@ export class CommandProcessor {
      * Shoot a projectile from player's position
      * @private
      */
-    private shootProjectile(gameState: GameState): void {
-        const playerPos = gameState.player.getGridPosition();
+    private shootProjectile(gameState: GameState, player: import("../src/types.js").Player): void {
+        const playerPos = player.getGridPosition();
         gameState.projectiles.push({
             row: playerPos.row,
             col: playerPos.col,

@@ -56,7 +56,7 @@ export interface GameState {
   selectedTile: GridPosition | null;
   hoveredTile: GridPosition | null;
   projectiles: Projectile[];
-  player: Player;
+  players: Map<number, Player>; // Changed from single player to map of players (by player ID)
 }
 
 /**

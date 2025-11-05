@@ -12,6 +12,14 @@ import {
     BOX_COLOR_RIGHT,
     BOX_COLOR_TOP,
     BOX_BORDER_COLOR,
+    PLAYER1_COLOR_LEFT,
+    PLAYER1_COLOR_RIGHT,
+    PLAYER1_COLOR_TOP,
+    PLAYER1_BORDER_COLOR,
+    PLAYER2_COLOR_LEFT,
+    PLAYER2_COLOR_RIGHT,
+    PLAYER2_COLOR_TOP,
+    PLAYER2_BORDER_COLOR,
     PROJECTILE_FILL_COLOR,
     PROJECTILE_GLOW_COLOR,
     PROJECTILE_GLOW_WIDTH,
@@ -117,7 +125,21 @@ export function drawShadow(ctx: CanvasRenderingContext2D, row: number, col: numb
 }
 
 // Draw tile with jump offset
-export function drawTileWithJump(ctx: CanvasRenderingContext2D, row: number, col: number, color: string, highlight = false, hover = false, jumpHeight = 0): void {
+export function drawTileWithJump(
+    ctx: CanvasRenderingContext2D,
+    row: number,
+    col: number,
+    color: string,
+    highlight = false,
+    hover = false,
+    jumpHeight = 0,
+    playerColors = {
+        left: BOX_COLOR_LEFT,
+        right: BOX_COLOR_RIGHT,
+        top: BOX_COLOR_TOP,
+        border: BOX_BORDER_COLOR
+    }
+): void {
     const { x, y } = gridToScreen(row, col);
     const yOffset = -jumpHeight; // Negative to go up
 
@@ -155,9 +177,9 @@ export function drawTileWithJump(ctx: CanvasRenderingContext2D, row: number, col
         ctx.lineTo(x, y + TILE_HEIGHT - boxHeight + yOffset);
         ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
         ctx.closePath();
-        ctx.fillStyle = BOX_COLOR_LEFT;
+        ctx.fillStyle = playerColors.left;
         ctx.fill();
-        ctx.strokeStyle = BOX_BORDER_COLOR;
+        ctx.strokeStyle = playerColors.border;
         ctx.lineWidth = BOX_BORDER_WIDTH;
         ctx.stroke();
 
@@ -168,9 +190,9 @@ export function drawTileWithJump(ctx: CanvasRenderingContext2D, row: number, col
         ctx.lineTo(x, y + TILE_HEIGHT - boxHeight + yOffset);
         ctx.lineTo(x + TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
         ctx.closePath();
-        ctx.fillStyle = BOX_COLOR_RIGHT;
+        ctx.fillStyle = playerColors.right;
         ctx.fill();
-        ctx.strokeStyle = BOX_BORDER_COLOR;
+        ctx.strokeStyle = playerColors.border;
         ctx.lineWidth = BOX_BORDER_WIDTH;
         ctx.stroke();
 
@@ -181,9 +203,9 @@ export function drawTileWithJump(ctx: CanvasRenderingContext2D, row: number, col
         ctx.lineTo(x, y + TILE_HEIGHT - boxHeight + yOffset);
         ctx.lineTo(x - TILE_WIDTH / 2, y + TILE_HEIGHT / 2 - boxHeight + yOffset);
         ctx.closePath();
-        ctx.fillStyle = BOX_COLOR_TOP;
+        ctx.fillStyle = playerColors.top;
         ctx.fill();
-        ctx.strokeStyle = BOX_BORDER_COLOR;
+        ctx.strokeStyle = playerColors.border;
         ctx.lineWidth = BOX_BORDER_WIDTH;
         ctx.stroke();
     }
@@ -223,9 +245,8 @@ export function drawGrid(
     grid: Tile[][],
     hoveredTile: { row: number; col: number } | null,
     projectiles: Projectile[],
-    playerRow: number,
-    playerCol: number,
-    playerJumpHeight: number
+    players: Map<number, { row: number; col: number; jumpHeight: number }>,
+    _myPlayerNumber: number | null = null // Underscore prefix indicates intentionally unused
 ): void {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -246,12 +267,31 @@ export function drawGrid(
         drawProjectile(ctx, proj.row, proj.col);
     });
 
-    // Draw shadow if player is jumping
-    if (playerJumpHeight > 0) {
-        drawShadow(ctx, playerRow, playerCol);
-    }
+    // Draw all players
+    for (const [playerId, player] of players.entries()) {
+        // Draw shadow if player is jumping
+        if (player.jumpHeight > 0) {
+            drawShadow(ctx, player.row, player.col);
+        }
 
-    // Draw player (green box) at fractional position with jump offset
-    const tile = grid[Math.floor(playerRow)][Math.floor(playerCol)];
-    drawTileWithJump(ctx, playerRow, playerCol, tile.color, true, false, playerJumpHeight);
+        // Draw player box at fractional position with jump offset
+        const tile = grid[Math.floor(player.row)][Math.floor(player.col)];
+
+        // Determine player colors based on player number
+        const playerColors = playerId === 2
+            ? {
+                left: PLAYER2_COLOR_LEFT,
+                right: PLAYER2_COLOR_RIGHT,
+                top: PLAYER2_COLOR_TOP,
+                border: PLAYER2_BORDER_COLOR
+            }
+            : {
+                left: PLAYER1_COLOR_LEFT,
+                right: PLAYER1_COLOR_RIGHT,
+                top: PLAYER1_COLOR_TOP,
+                border: PLAYER1_BORDER_COLOR
+            };
+
+        drawTileWithJump(ctx, player.row, player.col, tile.color, true, false, player.jumpHeight, playerColors);
+    }
 }

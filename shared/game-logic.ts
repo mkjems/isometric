@@ -2,7 +2,7 @@
 // This is shared code that runs on both client and server
 // No browser-specific dependencies
 
-import type { GameState, InputState } from "../src/types.js";
+import type { GameState, InputState, Player } from "../src/types.js";
 import {
     PLAYER_SPEED,
     PLAYER_FRICTION,
@@ -19,13 +19,24 @@ import {
  * This is the core game tick that should run identically on client and server
  * @param gameState - The game state object (mutated in place)
  * @param input - The current input state
+ * @param playerId - Optional player ID for multiplayer (defaults to first player for single-player)
  */
 export function updateGameState(
     gameState: GameState,
-    input: InputState
+    input: InputState,
+    playerId?: number
 ): void {
-    updatePlayerMovement(gameState, input);
-    updatePlayerJump(gameState);
+    // For backward compatibility, if no playerId specified, use the first player (single-player mode)
+    const targetPlayerId = playerId ?? Array.from(gameState.players.keys())[0];
+    const player = gameState.players.get(targetPlayerId);
+
+    if (!player) {
+        console.warn(`updateGameState: Player ${targetPlayerId} not found`);
+        return;
+    }
+
+    updatePlayerMovement(player, input);
+    updatePlayerJump(player);
     updateProjectiles(gameState);
 }
 
@@ -34,10 +45,9 @@ export function updateGameState(
  * @private
  */
 function updatePlayerMovement(
-    gameState: GameState,
+    player: Player,
     input: InputState
 ): void {
-    const player = gameState.player;
 
     // Determine current movement state
     const hasRowVelocity = Math.abs(player.velRow) >= VELOCITY_THRESHOLD;
@@ -183,8 +193,7 @@ function updatePlayerMovement(
  * Update player jump physics
  * @private
  */
-function updatePlayerJump(gameState: GameState): void {
-    const player = gameState.player;
+function updatePlayerJump(player: Player): void {
 
     if (player.jumpHeight > 0 || player.jumpVelocity !== 0) {
         player.jumpVelocity -= GRAVITY;

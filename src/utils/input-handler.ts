@@ -6,9 +6,10 @@ import { screenToGrid } from "../game/grid.js";
 import { playJumpSound, playPhaserSound } from "../audio/sound-effects.js";
 import type { GameCommand, GameState } from "../types.js";
 import { CommandProcessor } from "../../shared/command-processor.js";
+import type { WebSocketClient } from "../network/websocket-client.ts";
 
-// Command processor instance
-const commandProcessor = new CommandProcessor();
+// Command processor instance (for player 1 in single-player mode)
+const commandProcessor = new CommandProcessor(1);
 
 // Command queue for this frame
 const commandQueue: GameCommand[] = [];
@@ -18,15 +19,19 @@ const commandQueue: GameCommand[] = [];
  * Returns the command processor and a function to get queued commands
  * @param {HTMLCanvasElement} canvas - The game canvas
  * @param {Object} gameState - The game state object
+ * @param {WebSocketClient} wsClient - Optional WebSocket client for multiplayer
  * @returns {Object} Command processor and command getter
  */
 export function initInputHandlers(
     canvas: HTMLCanvasElement,
-    gameState: GameState
+    gameState: GameState,
+    wsClient?: WebSocketClient | null
 ): {
     processor: CommandProcessor;
     getCommands: () => GameCommand[];
 } {
+    const isMultiplayer = wsClient !== null && wsClient !== undefined;
+
     // Track which keys are currently pressed (for continuous movement)
     const pressedKeys = new Set<string>();
 
@@ -41,7 +46,13 @@ export function initInputHandlers(
         // Convert key to command
         const command = keyToCommand(e.key, true);
         if (command) {
-            commandQueue.push(command);
+            // In multiplayer mode, send command to server
+            if (isMultiplayer && wsClient) {
+                wsClient.sendCommand(command);
+            } else {
+                // In single-player mode, queue locally
+                commandQueue.push(command);
+            }
 
             // Immediate action commands (non-movement)
             if (command.type === "JUMP") {
@@ -67,7 +78,13 @@ export function initInputHandlers(
         // Send stop movement command
         const command = keyToCommand(e.key, false);
         if (command) {
-            commandQueue.push(command);
+            // In multiplayer mode, send command to server
+            if (isMultiplayer && wsClient) {
+                wsClient.sendCommand(command);
+            } else {
+                // In single-player mode, queue locally
+                commandQueue.push(command);
+            }
         }
     });
 
