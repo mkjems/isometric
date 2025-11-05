@@ -86,3 +86,28 @@ function gameLoop() {
 // Start the game
 init();
 gameLoop();
+
+// Expose test API for Playwright (only in development mode)
+if (import.meta.env.DEV) {
+  (window as any).__gameTestAPI = {
+    getPlayerPosition: () => ({
+      row: gameState.player.row,
+      col: gameState.player.col,
+    }),
+    getPlayerGridPosition: () => gameState.player.getGridPosition(),
+    getPlayerJumpHeight: () => gameState.player.jumpHeight,
+    getPlayerVelocity: () => ({
+      velRow: gameState.player.velRow,
+      velCol: gameState.player.velCol,
+    }),
+    isPlayerOnGround: () => gameState.player.isOnGround(),
+    getGameState: () => ({
+      gridSize: gameState.grid.length,
+      hoveredTile: gameState.hoveredTile,
+      selectedTile: gameState.selectedTile,
+      projectileCount: gameState.projectiles.length,
+    }),
+    getCanvas: () => canvas,
+    getContext: () => ctx,
+  };
+}

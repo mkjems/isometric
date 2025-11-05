@@ -8,9 +8,16 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "server:dev": "deno task dev",
-    "server:start": "deno task start"
+    "server:start": "deno task start",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:chromium": "playwright test --project=chromium",
+    "test:debug": "playwright test --debug"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "eslint": "^9.39.1",

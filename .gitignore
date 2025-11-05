@@ -8,6 +8,10 @@ yarn.lock
 dist/
 build/
 
+# Tests
+test-results/
+playwright-report/
+
 # IDE
 .vscode/
 .idea/

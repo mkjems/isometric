@@ -157,10 +157,10 @@ function keyToCommand(key: string, pressed: boolean): GameCommand | null {
     // Action keys (only on press, not release)
     if (pressed) {
         if (key === " ") {
-            return { type: "SHOOT" };
+            return { type: "JUMP" };
         }
         if (key === "x" || key === "X") {
-            return { type: "JUMP" };
+            return { type: "SHOOT" };
         }
     }
 

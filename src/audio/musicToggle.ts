@@ -4,6 +4,16 @@ import BackgroundMusic from './backgroundMusic.js';
 
 const bgMusic = new BackgroundMusic();
 
+// Expose for testing (only in dev mode)
+if (import.meta.env.DEV) {
+    (window as any).__musicAPI = {
+        isPlaying: () => bgMusic.isPlaying,
+        toggle: () => bgMusic.toggle(),
+        start: () => bgMusic.start(),
+        stop: () => bgMusic.stop(),
+    };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const musicToggle = document.getElementById('musicToggle');
 
