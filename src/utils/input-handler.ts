@@ -5,32 +5,19 @@ import { GRID_ROWS, GRID_COLS } from "./constants.ts";
 import { screenToGrid } from "../game/grid.js";
 import { playJumpSound, playPhaserSound } from "../audio/sound-effects.js";
 import type { GameCommand, GameState } from "../types.js";
-import { CommandProcessor } from "../../shared/command-processor.js";
 import type { WebSocketClient } from "../network/websocket-client.ts";
 
-// Command processor instance (for player 1 in single-player mode)
-const commandProcessor = new CommandProcessor(1);
-
-// Command queue for this frame
-const commandQueue: GameCommand[] = [];
-
 /**
- * Initialize input handlers for the game
- * Returns the command processor and a function to get queued commands
+ * Initialize input handlers for the game (multiplayer mode)
  * @param {HTMLCanvasElement} canvas - The game canvas
  * @param {Object} gameState - The game state object
- * @param {WebSocketClient} wsClient - Optional WebSocket client for multiplayer
- * @returns {Object} Command processor and command getter
+ * @param {WebSocketClient} wsClient - WebSocket client for multiplayer
  */
 export function initInputHandlers(
     canvas: HTMLCanvasElement,
     gameState: GameState,
-    wsClient?: WebSocketClient | null
-): {
-    processor: CommandProcessor;
-    getCommands: () => GameCommand[];
-} {
-    const isMultiplayer = wsClient !== null && wsClient !== undefined;
+    wsClient: WebSocketClient
+): void {
 
     // Track which keys are currently pressed (for continuous movement)
     const pressedKeys = new Set<string>();
@@ -46,13 +33,8 @@ export function initInputHandlers(
         // Convert key to command
         const command = keyToCommand(e.key, true);
         if (command) {
-            // In multiplayer mode, send command to server
-            if (isMultiplayer && wsClient) {
-                wsClient.sendCommand(command);
-            } else {
-                // In single-player mode, queue locally
-                commandQueue.push(command);
-            }
+            // Send command to server
+            wsClient.sendCommand(command);
 
             // Immediate action commands (non-movement)
             if (command.type === "JUMP") {
@@ -78,13 +60,7 @@ export function initInputHandlers(
         // Send stop movement command
         const command = keyToCommand(e.key, false);
         if (command) {
-            // In multiplayer mode, send command to server
-            if (isMultiplayer && wsClient) {
-                wsClient.sendCommand(command);
-            } else {
-                // In single-player mode, queue locally
-                commandQueue.push(command);
-            }
+            wsClient.sendCommand(command);
         }
     });
 
@@ -98,7 +74,7 @@ export function initInputHandlers(
 
         // Check if clicked tile is within grid bounds
         if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
-            commandQueue.push({ type: "TELEPORT", row, col });
+            wsClient.sendCommand({ type: "TELEPORT", row, col });
         }
     });
 
@@ -131,15 +107,6 @@ export function initInputHandlers(
             }
         }
     });
-
-    return {
-        processor: commandProcessor,
-        getCommands: () => {
-            const commands = [...commandQueue];
-            commandQueue.length = 0; // Clear queue
-            return commands;
-        },
-    };
 }
 
 /**

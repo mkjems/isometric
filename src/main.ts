@@ -13,14 +13,9 @@ import { drawGrid } from "./rendering/renderer.ts";
 import { initInputHandlers } from "./utils/input-handler.ts";
 import { Player } from "./game/player.ts";
 import type { GameState } from "./types.ts";
-import { updateGameState } from "../shared/game-logic.js";
 import { WebSocketClient } from "./network/websocket-client.ts";
 
-// Check for multiplayer mode (query parameter ?multiplayer=true)
-const urlParams = new URLSearchParams(window.location.search);
-const MULTIPLAYER_MODE = urlParams.get("multiplayer") === "true";
-
-console.log(`🎮 Starting in ${MULTIPLAYER_MODE ? "MULTIPLAYER" : "SINGLE-PLAYER"} mode`);
+console.log("🎮 Starting MULTIPLAYER mode");
 
 // Get canvas and context
 const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
@@ -41,10 +36,6 @@ const gameState: GameState = {
   players: new Map([[1, new Player(INITIAL_PLAYER_ROW, INITIAL_PLAYER_COL)]]),
 };
 
-// Command processor and command getter
-let commandProcessor: ReturnType<typeof initInputHandlers>["processor"];
-let getCommands: ReturnType<typeof initInputHandlers>["getCommands"];
-
 // WebSocket client for multiplayer
 let wsClient: WebSocketClient | null = null;
 let myPlayerNumber: 1 | 2 | null = null;
@@ -53,68 +44,29 @@ let myPlayerNumber: 1 | 2 | null = null;
 function init() {
   gameState.grid = initGrid();
 
-  // Initialize multiplayer if enabled
-  if (MULTIPLAYER_MODE) {
-    wsClient = new WebSocketClient();
+  // Initialize WebSocket client for multiplayer
+  wsClient = new WebSocketClient();
 
-    // Handle game state updates from server
-    wsClient.onGameState((serverState) => {
-      // Replace local game state with server state
-      gameState.players = serverState.players;
-      gameState.projectiles = serverState.projectiles;
-      gameState.selectedTile = serverState.selectedTile;
-    });
-
-    // Handle connection state changes
-    wsClient.onConnectionChange((connectionState) => {
-      console.log(`Connection: ${connectionState.status} - ${connectionState.message}`);
-      myPlayerNumber = connectionState.playerNumber;
-      updateConnectionUI(connectionState);
-    });
-
-    // Connect to server
-    wsClient.connect();
-  }
-
-  // Initialize input handlers (pass wsClient for multiplayer)
-  const handlers = initInputHandlers(canvas, gameState, wsClient);
-  commandProcessor = handlers.processor;
-  getCommands = handlers.getCommands;
-}
-
-// Game loop - single player mode
-function gameLoopSinglePlayer() {
-  // Get commands from this frame
-  const commands = getCommands();
-
-  // Process each command
-  commands.forEach((command) => {
-    commandProcessor.processCommand(command, gameState);
+  // Handle game state updates from server
+  wsClient.onGameState((serverState) => {
+    // Replace local game state with server state
+    gameState.players = serverState.players;
+    gameState.projectiles = serverState.projectiles;
+    gameState.selectedTile = serverState.selectedTile;
   });
 
-  // Get current input state and update game (for player 1 in single-player)
-  const inputState = commandProcessor.getInputState();
-  updateGameState(gameState, inputState, 1);
+  // Handle connection state changes
+  wsClient.onConnectionChange((connectionState) => {
+    console.log(`Connection: ${connectionState.status} - ${connectionState.message}`);
+    myPlayerNumber = connectionState.playerNumber;
+    updateConnectionUI(connectionState);
+  });
 
-  // Prepare players map for rendering
-  const player = gameState.players.get(1)!;
-  const playersForRender = new Map([[1, {
-    row: player.row,
-    col: player.col,
-    jumpHeight: player.jumpHeight
-  }]]);
+  // Connect to server
+  wsClient.connect();
 
-  // Render
-  drawGrid(
-    ctx,
-    gameState.grid,
-    gameState.hoveredTile,
-    gameState.projectiles,
-    playersForRender,
-    1 // My player number
-  );
-
-  requestAnimationFrame(gameLoopSinglePlayer);
+  // Initialize input handlers (pass wsClient for multiplayer)
+  initInputHandlers(canvas, gameState, wsClient);
 }
 
 // Game loop - multiplayer mode (just renders, state comes from server)
@@ -174,12 +126,7 @@ function updateConnectionUI(connectionState: any) {
 
 // Start the game
 init();
-
-if (MULTIPLAYER_MODE) {
-  gameLoopMultiplayer();
-} else {
-  gameLoopSinglePlayer();
-}
+gameLoopMultiplayer();
 
 // Expose test API for Playwright (only in development mode)
 if (import.meta.env.DEV) {
