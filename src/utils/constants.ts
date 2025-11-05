@@ -15,8 +15,8 @@ export const OFFSET_X = CANVAS_WIDTH / 2;
 export const OFFSET_Y = 150;
 
 // Player settings
-export const PLAYER_SPEED = 0.15;
-export const PLAYER_FRICTION = 0.85;
+export const PLAYER_SPEED = 0.07;
+export const PLAYER_FRICTION = 0.7;
 export const JUMP_STRENGTH = 20;
 export const GRAVITY = 1.0;
 
@@ -26,7 +26,7 @@ export const SNAP_SPEED = 0.2;
 export const SNAP_THRESHOLD = 0.01;
 
 // Projectile settings
-export const PROJECTILE_SPEED = 0.5;
+export const PROJECTILE_SPEED = 0.09;
 
 // Initial player position
 export const INITIAL_PLAYER_ROW = 10;
