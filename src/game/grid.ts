@@ -7,12 +7,12 @@ import {
   GRID_COLS,
   OFFSET_X,
   OFFSET_Y,
-} from "./constants.ts";
+} from "../utils/constants.ts";
 import {
   TILE_COLOR_PRIMARY,
   TILE_COLOR_SECONDARY,
-} from "./rendering-constants.ts";
-import type { Tile, GridPosition, ScreenCoordinates } from "./types.ts";
+} from "../rendering/rendering-constants.ts";
+import type { Tile, GridPosition, ScreenCoordinates } from "../types.ts";
 
 // Initialize the grid with tiles
 export function initGrid(): Tile[][] {

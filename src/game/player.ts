@@ -1,6 +1,6 @@
 // Player class to encapsulate player state and behavior
 
-import type { GridPosition, MovementAxis } from "./types.ts";
+import type { GridPosition, MovementAxis } from "../types.ts";
 
 export class Player {
   row: number;

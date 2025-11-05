@@ -7,7 +7,7 @@ import {
     PROJECTILE_SPEED,
     GRID_ROWS,
     GRID_COLS,
-} from "../src/constants.js";
+} from "../src/utils/constants.js";
 
 /**
  * Maintains input state based on commands

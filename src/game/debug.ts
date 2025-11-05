@@ -1,7 +1,7 @@
 // Debug mode - displays useful development information
 
 import { gridToScreen } from './grid.js';
-import type { GameState } from './types.js';
+import type { GameState } from '../types.js';
 import type { Player } from './player.js';
 
 // Debug state

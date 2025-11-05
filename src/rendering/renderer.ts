@@ -1,8 +1,8 @@
 // Rendering functions for the isometric game
 
-import { TILE_WIDTH, TILE_HEIGHT, GRID_ROWS, GRID_COLS, CANVAS_WIDTH, CANVAS_HEIGHT } from './constants.js';
-import { gridToScreen } from './grid.js';
-import type { Tile, Projectile } from './types.js';
+import { TILE_WIDTH, TILE_HEIGHT, GRID_ROWS, GRID_COLS, CANVAS_WIDTH, CANVAS_HEIGHT } from '../utils/constants.js';
+import { gridToScreen } from '../game/grid.js';
+import type { Tile, Projectile } from '../types.js';
 import {
     BOX_HEIGHT,
     TILE_HOVER_COLOR,

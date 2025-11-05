@@ -2,10 +2,10 @@
 // Now emits commands instead of directly manipulating state
 
 import { GRID_ROWS, GRID_COLS } from "./constants.js";
-import { screenToGrid } from "./grid.js";
-import { playJumpSound, playPhaserSound } from "./sound-effects.js";
-import type { GameCommand, GameState } from "./types.js";
-import { CommandProcessor } from "../shared/command-processor.js";
+import { screenToGrid } from "../game/grid.js";
+import { playJumpSound, playPhaserSound } from "../audio/sound-effects.js";
+import type { GameCommand, GameState } from "../types.js";
+import { CommandProcessor } from "../../shared/command-processor.js";
 
 // Command processor instance
 const commandProcessor = new CommandProcessor();

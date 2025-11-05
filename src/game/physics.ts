@@ -1,8 +1,8 @@
 // Physics and game state update logic
 // This file now delegates to shared game logic
 
-import type { GameState, KeyboardState, InputState } from "./types.ts";
-import { updateGameState } from "../shared/game-logic.js";
+import type { GameState, KeyboardState, InputState } from "../types.ts";
+import { updateGameState } from "../../shared/game-logic.js";
 
 /**
  * Convert keyboard state to input state

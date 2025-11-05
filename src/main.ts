@@ -6,12 +6,12 @@ import {
   CANVAS_HEIGHT,
   INITIAL_PLAYER_ROW,
   INITIAL_PLAYER_COL,
-} from "./constants.ts";
-import { initGrid } from "./grid.ts";
-import { drawGrid } from "./renderer.ts";
-import { initInputHandlers } from "./input-handler.ts";
-import { Player } from "./player.ts";
-import { drawDebugInfo, toggleDebug } from "./debug.ts";
+} from "./utils/constants.ts";
+import { initGrid } from "./game/grid.ts";
+import { drawGrid } from "./rendering/renderer.ts";
+import { initInputHandlers } from "./utils/input-handler.ts";
+import { Player } from "./game/player.ts";
+import { drawDebugInfo, toggleDebug } from "./game/debug.ts";
 import type { GameState } from "./types.ts";
 import { updateGameState } from "../shared/game-logic.js";
 
