@@ -12,7 +12,6 @@ import { initGrid } from "./game/grid.ts";
 import { drawGrid } from "./rendering/renderer.ts";
 import { initInputHandlers } from "./utils/input-handler.ts";
 import { Player } from "./game/player.ts";
-import { drawDebugInfo, toggleDebug } from "./game/debug.ts";
 import type { GameState } from "./types.ts";
 import { updateGameState } from "../shared/game-logic.js";
 import { WebSocketClient } from "./network/websocket-client.ts";
@@ -81,14 +80,6 @@ function init() {
   const handlers = initInputHandlers(canvas, gameState, wsClient);
   commandProcessor = handlers.processor;
   getCommands = handlers.getCommands;
-
-  // Add debug toggle listener (press 'D' key)
-  document.addEventListener("keydown", (e: KeyboardEvent) => {
-    if (e.key === "d" || e.key === "D") {
-      const enabled = toggleDebug();
-      console.log(`Debug mode: ${enabled ? "ON" : "OFF"}`);
-    }
-  });
 }
 
 // Game loop - single player mode
@@ -122,7 +113,6 @@ function gameLoopSinglePlayer() {
     playersForRender,
     1 // My player number
   );
-  drawDebugInfo(ctx, gameState);
 
   requestAnimationFrame(gameLoopSinglePlayer);
 }
@@ -150,7 +140,6 @@ function gameLoopMultiplayer() {
     playersForRender,
     myPlayerNumber // Pass player number for correct coloring
   );
-  drawDebugInfo(ctx, gameState);
 
   requestAnimationFrame(gameLoopMultiplayer);
 }

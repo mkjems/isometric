@@ -300,7 +300,7 @@ export function drawGrid(
             };
 
         drawTileWithJump(ctx, player.row, player.col, tile.color, true, false, player.jumpHeight, playerColors);
-        
+
         // Draw position label for debugging
         const { x, y } = gridToScreen(player.row, player.col);
         ctx.save();
