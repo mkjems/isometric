@@ -1,7 +1,7 @@
 // Input handling for keyboard and mouse events
 // Now emits commands instead of directly manipulating state
 
-import { GRID_ROWS, GRID_COLS } from "./constants.js";
+import { GRID_ROWS, GRID_COLS } from "./constants.ts";
 import { screenToGrid } from "../game/grid.js";
 import { playJumpSound, playPhaserSound } from "../audio/sound-effects.js";
 import type { GameCommand, GameState } from "../types.js";

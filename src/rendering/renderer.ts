@@ -1,6 +1,6 @@
 // Rendering functions for the isometric game
 
-import { TILE_WIDTH, TILE_HEIGHT, GRID_ROWS, GRID_COLS, CANVAS_WIDTH, CANVAS_HEIGHT } from '../utils/constants.js';
+import { TILE_WIDTH, TILE_HEIGHT, GRID_ROWS, GRID_COLS, CANVAS_WIDTH, CANVAS_HEIGHT } from '../utils/constants.ts';
 import { gridToScreen } from '../game/grid.js';
 import type { Tile, Projectile } from '../types.js';
 import {
@@ -20,7 +20,7 @@ import {
     TILE_BORDER_WIDTH,
     TILE_HOVER_BORDER_WIDTH,
     BOX_BORDER_WIDTH
-} from './rendering-constants.js';
+} from './rendering-constants.ts';
 
 // Draw a single isometric tile
 export function drawTile(ctx: CanvasRenderingContext2D, row: number, col: number, color: string, highlight = false, hover = false): void {

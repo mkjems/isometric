@@ -12,7 +12,7 @@ import {
     VELOCITY_THRESHOLD,
     SNAP_SPEED,
     SNAP_THRESHOLD,
-} from "../src/utils/constants.js";
+} from "../src/utils/constants.ts";
 
 /**
  * Update game state based on input - handles player movement, jumping, and projectiles
