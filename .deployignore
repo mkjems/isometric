@@ -1,0 +1,29 @@
+# Deno Deploy Ignore File
+# Files and directories to exclude from deployment
+
+# Node modules and build artifacts
+node_modules/
+.vscode/
+vscode/
+
+# Source files (we only need dist/)
+src/
+docs/
+
+# Test files
+tests/
+playwright.config.ts
+*.spec.ts
+
+# Development files
+.git/
+.gitignore
+vite.config.ts
+tsconfig.json
+package.json
+package-lock.json
+
+# Documentation
+README.md
+MULTIPLAYER.md
+*.txt

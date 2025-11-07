@@ -5,7 +5,7 @@ import { GameSessionManager } from "./game-session.ts";
 import { GameLoop } from "./game-loop.ts";
 import { WebSocketHandler } from "./websocket-handler.ts";
 
-const PORT = 8000;
+const PORT = parseInt(Deno.env.get("PORT") || "8000");
 
 // Initialize multiplayer components
 const sessionManager = new GameSessionManager();
